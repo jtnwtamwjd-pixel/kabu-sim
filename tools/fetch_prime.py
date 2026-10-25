@@ -68,7 +68,7 @@ def main():
     for c, s in closes.items():
         frame.loc[frame.index < s.index[0], c] = float("nan")
     # 1日だけの異常値
-    arr = frame.values
+    arr = frame.to_numpy(dtype=float, copy=True)
     for j in range(arr.shape[1]):
         col = arr[:, j]
         for i in range(1, len(col) - 1):
@@ -90,6 +90,7 @@ def main():
            "n225": enc(nk.values.tolist()),
            "meta": [[c, meta[c][0], meta[c][1], first[c], 1 if c in MAIN else 0] for c in ordered]}
     tot = 0
+    cpos = {x: i for i, x in enumerate(cal)}
     for y, (i0, i1) in years.items():
         t = []
         for c in ordered:
@@ -102,8 +103,8 @@ def main():
         for c, s in divs.items():
             for d, a in s.items():
                 x = d.strftime("%Y-%m-%d")
-                if x[:4] == y and x in cal:
-                    dv.setdefault(c, []).append([cal.index(x) - i0, round(float(a) * 100)])
+                if x[:4] == y and x in cpos:
+                    dv.setdefault(c, []).append([cpos[x] - i0, round(float(a) * 100)])
         js = json.dumps({"y": y, "i0": i0, "i1": i1, "t": t, "dv": dv}, ensure_ascii=False, separators=(",", ":"))
         open(f"{OUT}/y/{y}.json", "w").write(js); tot += len(js)
         print(y, len(t), round(len(js) / 1e6, 2), "MB", flush=True)
