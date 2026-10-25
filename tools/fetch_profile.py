@@ -56,8 +56,17 @@ ok = 0
 for i, c in enumerate(codes):
     for attempt in range(3):
         try:
-            info = yf.Ticker(c + ".T").info or {}
+            tk = yf.Ticker(c + ".T"); info = tk.info or {}
             p = prof[c]
+            try:
+                bs = tk.balance_sheet
+                if bs is not None and not bs.empty:
+                    col = bs.columns[0]
+                    eq = next((bs.at[k, col] for k in ("Stockholders Equity", "Common Stock Equity", "Total Equity Gross Minority Interest") if k in bs.index and bs.at[k, col] == bs.at[k, col]), None)
+                    ta = bs.at["Total Assets", col] if "Total Assets" in bs.index else None
+                    if eq and ta and ta == ta and ta > 0: p["eqr"] = round(float(eq) / float(ta), 3)
+            except Exception:
+                pass
             for src, dst, f in [("marketCap", "mc", int), ("trailingPE", "per", float), ("priceToBook", "pbr", float), ("returnOnEquity", "roe", float),
                                 ("totalRevenue", "rev", int), ("operatingMargins", "opm", float), ("fullTimeEmployees", "emp", int), ("website", "web", str)]:
                 v = info.get(src)
