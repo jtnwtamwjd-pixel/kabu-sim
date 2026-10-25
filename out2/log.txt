@@ -1,19 +1,7 @@
 wikidata rows 2350
-wiki titles 590
-info 0 1
-info 100 101
-info 200 201
-info 300 301
-info 400 401
-info 500 501
-info 600 601
-info 700 701
-info 800 801
-info 900 901
-info 1000 1001
-info 1100 1101
-info 1200 1201
-info 1300 1301
-info 1400 1401
-info 1500 1501
-done 1551 590 459976
+name lookup 961 found 793
+name lookup 168 found 39
+name lookup 129 found 1
+name lookup 22 found 2
+descriptions 1425
+done (wiki only) 710773
