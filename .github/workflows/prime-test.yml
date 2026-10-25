@@ -12,7 +12,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: pip install yfinance pandas xlrd requests
-      - run: python tools/fetch_prime.py out
+      - run: mkdir -p out && (python tools/fetch_prime.py out 2>&1 | tee out/log.txt) || true
       - run: |
           git config user.name github-actions
           git config user.email github-actions@users.noreply.github.com
