@@ -11,9 +11,15 @@ MAIN = ["7203","6758","9984","6861","8306","9432","6501","8035","9983","7974","4
 FIRST = {"9201": "2012-09-19", "8766": "2005-10-03", "7832": "2005-09-29", "4568": "2005-09-28", "3382": "2005-09-01"}
 
 def jpx_list():
-    url = "https://www.jpx.co.jp/markets/statistics-equities/misc/tvdivq0000001vg2-att/data_j.xls"
-    r = requests.get(url, timeout=60, headers={"User-Agent": "Mozilla/5.0"}); r.raise_for_status()
+    import re
+    H = {"User-Agent": "Mozilla/5.0"}
+    page = requests.get("https://www.jpx.co.jp/markets/statistics-equities/misc/01.html", timeout=60, headers=H).text
+    m = re.search(r'href="([^"]+data_j\.xlsx?)"', page)
+    url = "https://www.jpx.co.jp" + m.group(1) if m.group(1).startswith("/") else m.group(1)
+    print("jpx", url, flush=True)
+    r = requests.get(url, timeout=60, headers=H); r.raise_for_status()
     df = pd.read_excel(io.BytesIO(r.content), dtype=str)
+    print(df.columns.tolist(), df["市場・商品区分"].value_counts().to_dict(), flush=True)
     df = df[df["市場・商品区分"].str.startswith("プライム")]
     return [(str(c).strip(), n.strip(), (s or "").strip()) for c, n, s in zip(df["コード"], df["銘柄名"], df["33業種区分"])]
 

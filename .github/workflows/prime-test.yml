@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
-      - run: pip install yfinance pandas xlrd requests
+      - run: pip install yfinance pandas xlrd openpyxl requests
       - run: mkdir -p out && (python tools/fetch_prime.py out 2>&1 | tee out/log.txt) || true
       - run: |
           git config user.name github-actions
