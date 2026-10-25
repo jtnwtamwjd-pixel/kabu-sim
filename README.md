@@ -4,6 +4,7 @@
 
 ▶ https://jtnwtamwjd-pixel.github.io/kabu-sim/
 
+- オンライン対戦は PeerJS（WebRTC）で、ルーム番号 `kabusim-room-XXXXXX` でホストに接続
 - `src.html` … ゲーム本体（`__DATA__` に株価データが埋め込まれる）
 - `tools/fetch.py` … yfinance で株価を取得
 - `tools/build.py` … 取得データを圧縮して `data.json` / `index.html` を生成
