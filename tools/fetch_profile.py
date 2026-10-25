@@ -5,8 +5,13 @@ import requests, yfinance as yf
 OUT = sys.argv[1] if len(sys.argv) > 1 else "data/profile.json"
 MAN = sys.argv[2] if len(sys.argv) > 2 else "site/manifest.json"
 UA = {"User-Agent": "kabu-sim/1.0 (https://github.com/jtnwtamwjd-pixel/kabu-sim)"}
-codes = [m[0] for m in json.load(open(MAN))["meta"]]
+META = {m[0]: m for m in json.load(open(MAN))["meta"]}
+codes = list(META)
+BASE = os.environ.get("BASE")  # 既存の profile.json を使い、Wikipedia 部分だけやり直す
 prof = {c: {} for c in codes}
+if BASE:
+    for c, p in json.load(open(BASE))["p"].items():
+        if c in prof: prof[c] = p
 
 Q = """SELECT ?item ?code ?article ?inception ?hqLabel ?emp WHERE {
  ?item p:P414 ?st . ?st ps:P414 wd:Q217475 ; pq:P249 ?code .
@@ -34,23 +39,42 @@ try:
 except Exception as e:
     print("wikidata fail", e, flush=True)
 
-titles = [(c, p["wt"]) for c, p in prof.items() if p.get("wt")]
-print("wiki titles", len(titles), flush=True)
-for k in range(0, len(titles), 20):
-    chunk = titles[k:k + 20]
-    try:
-        r = requests.get("https://ja.wikipedia.org/w/api.php", params={"action": "query", "prop": "extracts", "exintro": 1, "explaintext": 1,
-              "exsentences": 3, "exlimit": 20, "redirects": 1, "format": "json", "titles": "|".join(t for _, t in chunk)}, headers=UA, timeout=60).json()
-        norm = {x["from"]: x["to"] for x in r["query"].get("normalized", []) + r["query"].get("redirects", [])}
-        ext = {pg["title"]: pg.get("extract", "") for pg in r["query"]["pages"].values()}
-        for c, t in chunk:
-            tt = norm.get(t, t); tt = norm.get(tt, tt)
-            x = re.sub(r"\s*（[^）]*(英|英語|英称|英文社名)[^）]*）", "", ext.get(tt, "")).strip()
-            x = re.sub(r"\n+", " ", x)
-            if x: prof[c]["d"] = x[:260]
-    except Exception as e:
-        print("wiki fail", k, e, flush=True)
-    time.sleep(0.5)
+CORP = re.compile(r"(株式会社|会社|企業|メーカー|持株会社|銀行|グループ)")
+def extracts(pairs, check):
+    """pairs: [(code, title)] → 見つかった code の set"""
+    found = set()
+    for k in range(0, len(pairs), 20):
+        chunk = pairs[k:k + 20]
+        try:
+            r = requests.get("https://ja.wikipedia.org/w/api.php", params={"action": "query", "prop": "extracts|pageprops", "exintro": 1, "explaintext": 1,
+                  "exsentences": 3, "exlimit": 20, "redirects": 1, "format": "json", "titles": "|".join(t for _, t in chunk)}, headers=UA, timeout=60).json()
+            q = r.get("query", {})
+            norm = {x["from"]: x["to"] for x in q.get("normalized", []) + q.get("redirects", [])}
+            pages = {pg["title"]: pg for pg in q.get("pages", {}).values()}
+            for c, t in chunk:
+                tt = norm.get(t, t); tt = norm.get(tt, tt); pg = pages.get(tt)
+                if not pg or "missing" in pg or "disambiguation" in pg.get("pageprops", {}): continue
+                x = re.sub(r"\s*（[^）]*(英|英語|英称|英文社名)[^）]*）", "", pg.get("extract", "")).strip()
+                x = re.sub(r"\n+", " ", x)
+                if not x or (check and not CORP.search(x[:120])): continue
+                prof[c]["d"] = x[:260]; prof[c]["wt"] = tt; found.add(c)
+        except Exception as e:
+            print("wiki fail", k, e, flush=True)
+        time.sleep(0.5)
+    return found
+
+extracts([(c, p["wt"]) for c, p in prof.items() if p.get("wt") and not p.get("d")], False)
+def base_name(n):
+    return re.sub(r"\s+", "", n)
+for variant in (lambda n: n, lambda n: n + " (企業)", lambda n: "株式会社" + n, lambda n: n.replace("ホールディングス", "") if "ホールディングス" in n else None):
+    miss = [(c, variant(base_name(META[c][1]))) for c in codes if not prof[c].get("d")]
+    miss = [(c, t) for c, t in miss if t]
+    got = extracts(miss, True)
+    print("name lookup", len(miss), "found", len(got), flush=True)
+print("descriptions", sum(1 for p in prof.values() if p.get("d")), flush=True)
+if BASE:
+    json.dump({"at": time.strftime("%Y-%m-%d"), "p": prof}, open(OUT, "w"), ensure_ascii=False, separators=(",", ":"))
+    print("done (wiki only)", os.path.getsize(OUT)); sys.exit(0)
 
 ok = 0
 for i, c in enumerate(codes):
