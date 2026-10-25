@@ -26,6 +26,7 @@ def jpx_list():
 def enc(vals):
     out, pv = [], 0
     for v in vals:
+        if v != v: out.append(""); continue
         p = int(round(v * 10)); d = p - pv; pv = p
         out.append("" if d == 0 else (("-" if d < 0 else "") + format(abs(d), "x")))
     return ",".join(out)
@@ -61,8 +62,13 @@ def main():
     n225 = yf.download("^N225", start=START, auto_adjust=False, progress=False)
     n225 = n225["Close"].squeeze().dropna()
     # 暦：トヨタの取引日
-    cal = [d.strftime("%Y-%m-%d") for d in closes["7203"].index]
-    cal_idx = pd.DatetimeIndex(pd.to_datetime(cal))
+    raw = pd.DataFrame(closes)
+    have = raw.notna().sum(axis=1)
+    listed_n = raw.notna().cummax().sum(axis=1)
+    good = have[(have >= listed_n * 0.5) & (have >= 20)].index
+    cal_idx = closes["7203"].index.intersection(good)
+    cal = [d.strftime("%Y-%m-%d") for d in cal_idx]
+    print("calendar", len(cal), cal[0], cal[-1], flush=True)
     frame = pd.DataFrame({c: s.reindex(s.index.union(cal_idx)).ffill().reindex(cal_idx) for c, s in closes.items()})
     # 上場前は NaN のまま（ffill しない）
     for c, s in closes.items():
@@ -77,7 +83,7 @@ def main():
                 r = b / a
                 if (r > 1.4 or r < 0.7) and 0.85 < cc / a < 1.18: col[i] = a
     frame = pd.DataFrame(arr, index=frame.index, columns=frame.columns)
-    nk = n225.reindex(n225.index.union(cal_idx)).ffill().reindex(cal_idx)
+    nk = n225.reindex(n225.index.union(cal_idx)).ffill().reindex(cal_idx).bfill()
     d0 = dt.date.fromisoformat(cal[0]); dd = []; prev = d0
     for x in cal[1:]:
         t = dt.date.fromisoformat(x); dd.append(chr(48 + (t - prev).days)); prev = t
