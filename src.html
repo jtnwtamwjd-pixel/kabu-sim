@@ -82,7 +82,7 @@ input:focus{border-color:var(--acc)}
 .it .av{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-size:11px;font-weight:800;flex:none;color:#fff;letter-spacing:-.02em}
 .it .nm{flex:1;min-width:0}
 .it .nm b{display:block;font-size:14.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.it .nm small{color:var(--sub);font-size:11.5px}
+.it .nm small{color:var(--sub);font-size:11.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .it canvas.sp{width:58px;height:26px;flex:none}
 .it .px{text-align:right;min-width:86px}
 .it .px b{display:block;font-size:15px;font-weight:700}
@@ -183,6 +183,17 @@ table.tr td{padding:9px 6px;border-bottom:1px solid var(--line)}
 .loading{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(7,9,15,.72);backdrop-filter:blur(6px);color:var(--sub);font-size:14px}
 .spin{width:38px;height:38px;border-radius:50%;border:3px solid var(--line2);border-top-color:var(--acc2);animation:sp 0.8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+.co{margin-top:12px}
+.co .desc{font-size:13.5px;line-height:1.75;margin:8px 0 6px;color:#d4dae4}
+.note a{color:var(--acc2);text-decoration:none}
+.scrbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.scrbar button{padding:7px 12px;font-size:12.5px;border-radius:20px;font-weight:700}
+.scrbar button.on{background:var(--grad);color:#0a0a14;border:0}
+.scrbar .clr{background:transparent;color:var(--sub)}
+.tag{font-size:12px;padding:5px 6px 5px 10px;border-radius:20px;background:rgba(139,123,255,.14);color:#cfc8ff;display:inline-flex;align-items:center;gap:4px}
+.tag i{font-style:normal;cursor:pointer;width:18px;height:18px;display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.1);font-size:10px}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+.presets button{font-size:13px;padding:8px 12px;border-radius:20px}
 </style>
 </head>
 <body>
@@ -344,7 +355,7 @@ function idxOf(dates,s){let lo=0,hi=dates.length-1;if(s<=dates[0])return 0;if(s>
 const $=id=>document.getElementById(id);
 function fmt(v,d=0){if(!isFinite(v))return '—';return v.toLocaleString('ja-JP',{minimumFractionDigits:d,maximumFractionDigits:d})}
 function pxf(v){if(!isFinite(v))return '—';return fmt(v,v%1!==0?1:0)}
-function yen(v){const s=v<0?'-':'';v=Math.abs(v);if(v>=1e8)return s+(v/1e8).toFixed(v>=1e10?1:2)+'億円';if(v>=1e6)return s+fmt(v/1e4)+'万円';return s+fmt(Math.round(v))+'円'}
+function yen(v){const s=v<0?'-':'';v=Math.abs(v);if(v>=1e12)return s+(v/1e12).toFixed(v>=1e13?1:2)+'兆円';if(v>=1e8)return s+(v/1e8).toFixed(v>=1e10?1:2)+'億円';if(v>=1e6)return s+fmt(v/1e4)+'万円';return s+fmt(Math.round(v))+'円'}
 function pct(v,d=2){if(!isFinite(v))return '—';return (v>0?'+':'')+(v*100).toFixed(d)+'%'}
 function cls(v){return v>0?'up':v<0?'dn':''}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -586,7 +597,7 @@ async function openLive(){
 }
 async function resume(){const sv=LS.get('kabu_scn',null);if(!sv)return;if(!await useWindow(gIdx(sv.startDate)-LOOKBACK,gIdx(sv.endDate)))return;G=loadGame('kabu_scn');startGame()}
 function startGame(){
-  $('menu').classList.add('hide');$('game').classList.remove('hide');UI.tab='mkt';UI.q='';UI.sec='';UI.limit=40;UI.sort='code';UI.scope=null;UI.detail=null;render();window.scrollTo(0,0);
+  $('menu').classList.add('hide');$('game').classList.remove('hide');UI.tab='mkt';UI.q='';UI.sec='';UI.limit=40;UI.sort='code';UI.scope=null;UI.scr={};UI.detail=null;render();window.scrollTo(0,0);
 }
 
 // ---------- ゲーム画面 ----------
@@ -638,7 +649,8 @@ function mktView(){
   return `<div class="glass idx" id="idxCard" onclick="openDetail('N225')">${idxInner()}</div>
   <div class="seg scope" style="margin-bottom:10px">${scopes.map(([k,n])=>`<button class="${UI.scope===k?'on':''}" onclick="UI.scope='${k}';UI.limit=40;renderMain()">${n}</button>`).join('')}</div>
   <div class="search"><input id="qIn" type="search" placeholder="${G.set.blind?'番号・業種で検索':'銘柄名・コードで検索'}" value="${esc(UI.q||'')}" oninput="UI.q=this.value;UI.limit=40;renderList()"><select onchange="UI.sec=this.value;UI.limit=40;renderList()"><option value="">全業種</option>${secs.map(x=>`<option ${UI.sec===x?'selected':''}>${esc(x)}</option>`).join('')}</select></div>
-  <div class="sortbar">${[['code',G.set.blind?'番号順':'コード順'],['up','値上がり'],['dn','値下がり'],['m1','1ヶ月上昇'],['m1d','1ヶ月下落'],['yld','配当利回り']].map(([k,n])=>`<button class="${UI.sort===k?'on':''}" onclick="UI.sort='${k}';UI.limit=40;renderMain()">${n}</button>`).join('')}</div>
+  ${scrBar()}
+  <div class="sortbar">${[['code',G.set.blind?'番号順':'コード順'],['up','値上がり'],['dn','値下がり'],['m1','1ヶ月上昇'],['m1d','1ヶ月下落'],['yld','配当利回り']].concat(PROF?[['pbr','PBR低い'],['eqr','自己資本比率'],['per','PER低い'],['roe','ROE高い'],['mc','時価総額']]:[]).map(([k,n])=>`<button class="${UI.sort===k?'on':''}" onclick="UI.sort='${k}';UI.limit=40;renderMain()">${n}</button>`).join('')}</div>
   <div id="mlist"></div>`;
 }
 function renderList(){
@@ -646,19 +658,21 @@ function renderList(){
   let codes=D.codes.filter(c=>listed(c));
   if(UI.scope==='main')codes=codes.filter(c=>M.meta[c].main);else if(UI.scope==='own')codes=codes.filter(c=>G.pos[c]);
   if(UI.sec)codes=codes.filter(c=>M.meta[c].s===UI.sec);
+  codes=applyScr(codes);
   const q=(UI.q||'').trim().toLowerCase();
   if(q)codes=codes.filter(c=>G.set.blind?(G.alias[c].includes(q)||M.meta[c].s.includes(q)):(c.includes(q)||M.meta[c].n.toLowerCase().includes(q)||M.meta[c].s.includes(q)));
   const s=UI.sort;
   if(s==='up'||s==='dn'||s==='m1'||s==='m1d'){const n=s[0]==='m'?21:1,dir=(s==='dn'||s==='m1d')?1:-1;const k={};for(const c of codes)k[c]=chgOf(c,n);codes.sort((a,b)=>dir*(k[a]-k[b]))}
   else if(s==='yld'){const k={};for(const c of codes)k[c]=yld(c);codes.sort((a,b)=>k[b]-k[a])}
+  else if(PROF&&SCR_SORT[s]){const [f,dir]=SCR_SORT[s];const val=c=>{const v=metric(c,f);return v==null||(f==='per'&&v<=0)?null:v};codes=codes.filter(c=>val(c)!=null).sort((a,b)=>dir*(val(a)-val(b)))}
   else if(G.set.blind)codes.sort((a,b)=>G.alias[a].localeCompare(G.alias[b]));
   const lim=UI.limit||40,tot=codes.length;
   let h=`<div class="cnt sub">${tot}銘柄${tot>lim?` ・ 上位${lim}件を表示`:''}</div><div class="list">`;
   if(!tot)h+=`<p class="sub" style="text-align:center;padding:24px;margin:0">該当する銘柄はありません</p>`;
   for(const c of codes.slice(0,lim)){
     const p=px(c),r=s[0]==='m'?chgOf(c,21):chgOf(c),pos=G.pos[c];
-    const extra=s==='yld'?`<span class="chg">${(yld(c)*100).toFixed(2)}%</span>`:`<span class="chg num ${cls(r)}">${pct(r)}</span>`;
-    h+=`<div class="it" onclick="openDetail('${c}')">${avatar(c)}<div class="nm"><b>${esc(nameOf(c))}${pos?`<span class="badge ${pos.q<0?'s':''}">${pos.q<0?'売建':'保有'}</span>`:''}</b><small>${esc(codeLabel(c))}</small></div><canvas class="sp" data-c="${c}"></canvas><div class="px num"><b>${pxf(p)}</b>${extra}</div></div>`;
+    const extra=s==='yld'?`<span class="chg">${(yld(c)*100).toFixed(2)}%</span>`:SCR_SORT[s]&&PROF?`<span class="chg">${metricLabel(c,SCR_SORT[s][0])}</span>`:`<span class="chg num ${cls(r)}">${pct(r)}</span>`;
+    h+=`<div class="it" onclick="openDetail('${c}')">${avatar(c)}<div class="nm"><b>${esc(nameOf(c))}${pos?`<span class="badge ${pos.q<0?'s':''}">${pos.q<0?'売建':'保有'}</span>`:''}</b><small>${scrActive()&&PROF?esc(G.set.blind?M.meta[c].s:c)+' ・ '+scrMini(c):esc(codeLabel(c))}</small></div><canvas class="sp" data-c="${c}"></canvas><div class="px num"><b>${pxf(p)}</b>${extra}</div></div>`;
   }
   h+='</div>';
   if(tot>lim)h+=`<button class="go ghost" onclick="UI.limit+=60;renderList()">さらに表示（残り${tot-lim}銘柄）</button>`;
@@ -714,6 +728,7 @@ function renderDetail(){
   <div class="kv num" style="margin-top:4px"><div><span>52週高値</span><b>${pxf(Math.max(...w52))}</b></div><div><span>52週安値</span><b>${pxf(Math.min(...w52))}</b></div>
   <div><span>1ヶ月</span><b class="${cls(p/P[Math.max(0,i-21)]-1)}">${pct(p/P[Math.max(0,i-21)]-1,1)}</b></div><div><span>1年</span><b class="${cls(p/P[Math.max(0,i-245)]-1)}">${pct(p/P[Math.max(0,i-245)]-1,1)}</b></div>
   ${isIdx?'':`<div><span>配当利回り</span><b>${(yld(c)*100).toFixed(2)}%</b></div><div><span>最低購入額</span><b>${yen(p*G.set.unit)}</b></div>`}</div>`;
+  if(!isIdx)h+=coCard(c);
   if(!isIdx){
     if(pos){const pl=(p-pos.cost)*pos.q;h+=`<div class="card kv num" style="margin-top:12px"><div><span>${pos.q<0?'空売り':'保有'}</span><b>${fmt(Math.abs(pos.q))}株</b></div><div><span>平均${pos.q<0?'売建':'取得'}</span><b>${pxf(pos.cost)}</b></div><div><span>評価額</span><b>${yen(Math.abs(pos.q*p))}</b></div><div><span>評価損益</span><b class="${cls(pl)}">${yen(pl)}</b></div></div>`}
     const sides=['buy','sell'];if(G.set.short)sides.push('short','cover');
@@ -751,6 +766,71 @@ function execTrade(){
   toast(`✅ ${esc(nameOf(c))} ${fmt(UI.qty)}株 ${SIDE[UI.side][0]}（@${pxf(px(c))}）`);
   UI.qty=null;if(!G.pos[c]&&(UI.side==='sell'||UI.side==='cover'))UI.side='buy';
   renderDetail();renderHdr();renderMain();
+}
+
+// ---------- スクリーニング ----------
+const SCR=[ // key, ラベル, 方向(min/max), 単位, 選択肢
+ ['pbr','PBR','max','倍',[0.5,0.8,1,1.5,3]],
+ ['eqr','自己資本比率','min','%',[30,40,50,60,70]],
+ ['per','PER','max','倍',[8,10,15,20,30]],
+ ['yld','配当利回り','min','%',[2,3,3.5,4,5]],
+ ['roe','ROE','min','%',[5,8,10,15,20]],
+ ['mc','時価総額','min','億円',[100,500,1000,5000,10000]]];
+const SCR_PRESET=[['💎 割安株',{pbr:1,per:15}],['💰 高配当',{yld:3.5}],['🛡 財務健全',{eqr:60}],['🚀 高収益',{roe:15}],['🏦 大型株',{mc:10000}]];
+const SCR_SORT={pbr:['pbr',1],eqr:['eqr',-1],per:['per',1],roe:['roe',-1],mc:['mc',-1]};
+function metric(c,k){if(k==='yld')return yld(c)*100;const p=PROF&&PROF.p[c];if(!p)return null;const v=p[k];if(v==null)return null;
+  if(k==='eqr'||k==='roe')return v*100;if(k==='mc')return v/1e8;return v}
+function metricLabel(c,k){const v=metric(c,k);if(v==null)return '—';const d=SCR.find(x=>x[0]===k);
+  if(k==='mc')return v>=1e4?(v/1e4).toFixed(1)+'兆円':fmt(v)+'億円';return (k==='pbr'?v.toFixed(2):v.toFixed(1))+d[3]}
+function scrActive(){return UI.scr&&Object.keys(UI.scr).length>0}
+function scrMini(c){return Object.keys(UI.scr).map(k=>`${SCR.find(x=>x[0]===k)[1]} ${metricLabel(c,k)}`).join(' / ')}
+function applyScr(codes){
+  if(!scrActive())return codes;
+  if(!PROF){loadProfile();return Object.keys(UI.scr).every(k=>k==='yld')?codes.filter(c=>yld(c)*100>=UI.scr.yld):[]}
+  return codes.filter(c=>Object.entries(UI.scr).every(([k,lim])=>{const v=metric(c,k);if(v==null)return false;if(k==='per'&&v<=0)return false;return SCR.find(x=>x[0]===k)[2]==='max'?v<=lim:v>=lim}));
+}
+function scrBar(){
+  loadProfile();
+  const on=scrActive();
+  return `<div class="scrbar"><button class="${on?'on':''}" onclick="scrSheet()">🔍 条件で絞り込み${on?` ・ ${Object.keys(UI.scr).length}`:''}</button>${on?Object.entries(UI.scr).map(([k,v])=>{const d=SCR.find(x=>x[0]===k);return `<span class="tag">${d[1]} ${d[2]==='max'?'≦':'≧'}${fmt(v,v%1?1:0)}${d[3]}<i onclick="delete UI.scr['${k}'];UI.limit=40;renderMain()">✕</i></span>`}).join('')+`<button class="clr" onclick="UI.scr={};renderMain()">クリア</button>`:''}</div>`;
+}
+function scrSheet(){
+  loadProfile();UI.scr=UI.scr||{};const T=Object.assign({},UI.scr);
+  const body=()=>`<p class="sub" style="font-size:12.5px;margin:0 0 8px;line-height:1.6">条件をタップで選択（もう一度タップで解除）。${PROF?`財務指標は ${esc(PROF.at)} 時点の最新値です${G.mode!=='live'&&D.b<M.last-5?'（ゲーム内の日付時点ではありません）':''}。配当利回りはゲーム内の日付時点で計算します。`:PROF_ST===3?'財務データを読み込めないため、配当利回りのみ使えます。':'財務データを読み込み中…'}</p>
+  <div class="sec-t" style="margin-top:6px">プリセット</div><div class="presets">${SCR_PRESET.map(([n,c],i)=>`<button onclick="scrPreset(${i})">${n}</button>`).join('')}</div>
+  ${SCR.map(([k,lab,dir,u,opts])=>`<div class="opt"><span>${lab}<small class="sub" style="display:block;font-size:11px">${dir==='max'?'以下':'以上'}</small></span><div class="seg" data-sk="${k}">${opts.map(v=>`<button class="${T[k]===v?'on':''}" data-v="${v}">${k==='mc'?(v>=1e4?v/1e4+'兆':v>=1000?v/1000+'千億':v+'億'):fmt(v,v%1?1:0)+u}</button>`).join('')}</div></div>`).join('')}
+  <div class="row" style="gap:8px;margin-top:6px"><button class="go ghost" style="flex:1" id="scrClr">リセット</button><button class="go pri" style="flex:2" id="scrGo">${scrCount(T)}銘柄を表示</button></div>`;
+  const draw=()=>{openSheet(body(),'スクリーニング');
+    $('sheetIn').querySelectorAll('.seg[data-sk]').forEach(sg=>sg.onclick=e=>{const b=e.target.closest('button');if(!b)return;const k=sg.dataset.sk,v=+b.dataset.v;if(T[k]===v)delete T[k];else T[k]=v;draw()});
+    $('scrClr').onclick=()=>{for(const k in T)delete T[k];draw()};
+    $('scrGo').onclick=()=>{UI.scr=Object.assign({},T);UI.limit=40;UI.scope='all';closeSheet();renderMain()};};
+  window.scrPreset=i=>{for(const k in T)delete T[k];Object.assign(T,SCR_PRESET[i][1]);draw()};
+  draw();
+  if(!PROF&&PROF_ST===1){const w=setInterval(()=>{if(PROF_ST!==1){clearInterval(w);if(!$('sheet').classList.contains('hide')&&$('scrGo'))draw()}},300)}
+}
+function scrCount(T){const keep=UI.scr;UI.scr=T;const n=applyScr(D.codes.filter(c=>listed(c))).length;UI.scr=keep;return n}
+
+// ---------- 企業情報 ----------
+let PROF=null,PROF_ST=0;
+function loadProfile(){
+  if(PROF_ST)return;PROF_ST=1;
+  if(location.protocol==='file:'||M.v!==2){PROF_ST=3;return}
+  fetch('profile.json').then(r=>r.ok?r.json():null).then(j=>{PROF=j;PROF_ST=j?2:3;if(UI.detail&&UI.detail!=='N225')renderDetail();else if(G&&UI.tab==='mkt'&&!$('game').classList.contains('hide'))renderMain()}).catch(()=>{PROF_ST=3})
+}
+function coCard(c){
+  if(G.set.blind)return `<div class="card co"><b>企業情報</b><p class="sub" style="font-size:12.5px;margin:6px 0 0">ブラインド中は企業情報を表示しません。</p></div>`;
+  loadProfile();
+  if(PROF_ST===1)return `<div class="card co"><b>企業情報</b><p class="sub" style="font-size:12.5px;margin:6px 0 0">読み込み中…</p></div>`;
+  const p=(PROF&&PROF.p[c])||{};const mt=M.meta[c];
+  const f1=v=>v==null?'—':v.toFixed(1);
+  const rows=[['設立',p.est||'—'],['本社',p.hq||'—'],['従業員',p.emp?fmt(p.emp)+'人':'—'],['時価総額',p.mc?yen(p.mc):'—'],['売上高',p.rev?yen(p.rev):'—'],['自己資本比率',p.eqr!=null?(p.eqr*100).toFixed(1)+'%':'—'],['配当利回り',(yld(c)*100).toFixed(2)+'%'],
+    ['PER',p.per!=null&&p.per>0?f1(p.per)+'倍':'—'],['PBR',p.pbr!=null?p.pbr.toFixed(2)+'倍':'—'],['ROE',p.roe!=null?(p.roe*100).toFixed(1)+'%':'—'],['営業利益率',p.opm!=null?(p.opm*100).toFixed(1)+'%':'—']];
+  const past=G.mode!=='live'&&D.b<M.last-5;
+  return `<div class="card co"><div class="row"><b>企業情報</b><span class="sub" style="margin-left:auto;font-size:11px">${PROF?esc(PROF.at)+' 時点':''}</span></div>
+  ${p.d?`<p class="desc">${esc(p.d)}</p>`:`<p class="sub" style="font-size:12.5px">概要データがありません。</p>`}
+  <div class="kv num">${rows.map(([k,v])=>`<div><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div>
+  ${past?'<p class="note" style="margin:8px 0 0">※ 指標は最新の値で、ゲーム内の日付時点のものではありません。</p>':''}
+  <p class="note" style="margin:6px 0 0">概要：${p.wt?`<a href="https://ja.wikipedia.org/wiki/${encodeURIComponent(p.wt)}" target="_blank" rel="noopener">Wikipedia「${esc(p.wt)}」</a>（CC BY-SA）`:'Wikipedia'} ・ 指標：Yahoo Finance${p.web?` ・ <a href="${esc(p.web)}" target="_blank" rel="noopener">公式サイト</a>`:''}</p></div>`;
 }
 
 // ---------- 時間を進める ----------

@@ -21,6 +21,7 @@ jobs:
       - run: |
           python -c "open('site/index.html','w').write(open('src.html').read().replace('__DATA__','null'))"
           touch site/.nojekyll
+          if [ -f data/profile.json ]; then cp data/profile.json site/profile.json; fi
       - name: publish to gh-pages
         run: |
           cd site

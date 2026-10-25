@@ -7,6 +7,7 @@
 - オンライン対戦は PeerJS（WebRTC）で、ルーム番号 `kabusim-room-XXXXXX` でホストに接続
 - `src.html` … ゲーム本体（`__DATA__` に株価データが埋め込まれる）
 - `tools/fetch_prime.py` … JPXの上場銘柄一覧からプライム銘柄を選び、yfinance で日足を取得して `manifest.json` と年別の `y/YYYY.json` を生成
+- `tools/fetch_profile.py` … 企業プロフィール（Wikipedia の概要・Wikidata の設立/本社・Yahoo Finance の財務指標）を `data/profile.json` に生成（毎週日曜に自動更新）
 - `tools/fetch.py` / `tools/build.py` … 主要銘柄だけを埋め込んだオフライン版用
 - `.github/workflows/update-prices` … 平日16:30/21:00(JST)に株価を更新して `gh-pages` に公開
 

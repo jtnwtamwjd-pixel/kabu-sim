@@ -1,0 +1,26 @@
+name: update-profiles
+on:
+  schedule:
+    - cron: '0 18 * * 6'   # 日曜 03:00 JST
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  profiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install yfinance pandas requests
+      - run: |
+          mkdir -p site
+          curl -sf https://jtnwtamwjd-pixel.github.io/kabu-sim/manifest.json -o site/manifest.json
+          python tools/fetch_profile.py data/profile.json site/manifest.json
+      - run: |
+          git config user.name github-actions
+          git config user.email github-actions@users.noreply.github.com
+          git add data/profile.json
+          git commit -qm "profiles $(date +%F)" || exit 0
+          git push
