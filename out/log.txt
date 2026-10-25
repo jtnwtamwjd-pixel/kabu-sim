@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/home/runner/work/kabu-sim/kabu-sim/tools/fetch_prime.py", line 108, in <module>
+    main()
+  File "/home/runner/work/kabu-sim/kabu-sim/tools/fetch_prime.py", line 29, in main
+    lst = jpx_list(); print("prime:", len(lst), flush=True)
+          ^^^^^^^^^^
+  File "/home/runner/work/kabu-sim/kabu-sim/tools/fetch_prime.py", line 15, in jpx_list
+    r = requests.get(url, timeout=60, headers={"User-Agent": "Mozilla/5.0"}); r.raise_for_status()
+                                                                              ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/requests/models.py", line 1167, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 404 Client Error: Not Found for url: https://www.jpx.co.jp/markets/statistics-equities/misc/tvdivq0000001vg2-att/data_j.xls
