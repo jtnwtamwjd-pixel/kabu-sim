@@ -1,5 +1,5 @@
 # 東証プライム全銘柄の日足を取得し、年ごとの圧縮データ (site/y/YYYY.json) と manifest を作る
-import io, json, os, sys, time, datetime as dt
+import io, json, os, sys, time, unicodedata, datetime as dt
 import pandas as pd, requests, yfinance as yf
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else "site"
@@ -21,7 +21,23 @@ def jpx_list():
     df = pd.read_excel(io.BytesIO(r.content), dtype=str)
     print(df.columns.tolist(), df["市場・商品区分"].value_counts().to_dict(), flush=True)
     df = df[df["市場・商品区分"].str.startswith("プライム")]
-    return [(str(c).strip(), n.strip(), (s or "").strip()) for c, n, s in zip(df["コード"], df["銘柄名"], df["33業種区分"])]
+    return [(str(c).strip(), unicodedata.normalize("NFKC", n).strip(), (s or "").strip()) for c, n, s in zip(df["コード"], df["銘柄名"], df["33業種区分"])]
+
+def clean(s):
+    """Yahoo の古いデータに残る未調整の分割・桁ずれ・一時的な異常値を除く。
+    一日で1.8倍超/0.55倍未満に動いて30日以内に戻るものは均し、戻らないものはその日より前を捨てる。"""
+    v = s.values.astype(float).copy(); n = len(v); start = 0; i = 1
+    while i < n:
+        a, b = v[i - 1], v[i]
+        if b < 1.0 or a < 1.0:
+            start = i + 1
+        elif b / a > 1.8 or b / a < 0.55:
+            j = next((k for k in range(i + 1, min(n, i + 31)) if 0.7 < v[k] / a < 1.4), None)
+            if j:
+                v[i:j] = a; i = j; continue
+            start = i
+        i += 1
+    return pd.Series(v[start:], index=s.index[start:])
 
 def enc(vals):
     out, pv = [], 0
@@ -52,13 +68,28 @@ def main():
             cl = sub["Close"].dropna(); cl = cl[cl > 0]
             if c in FIRST: cl = cl[cl.index >= FIRST[c]]
             if len(cl) == 0: continue
+            cl = clean(cl)
+            if len(cl) < 5: continue
             closes[c] = cl
             if "Dividends" in sub:
                 dv = sub["Dividends"].dropna(); dv = dv[dv > 0]
-                if c in FIRST: dv = dv[dv.index >= FIRST[c]]
+                dv = dv[dv.index >= cl.index[0]]
                 divs[c] = dv
         print("batch", k, len(closes), flush=True)
         time.sleep(2)
+    # 取りこぼしを1銘柄ずつ再取得
+    for c in [c for c in codes if c not in closes]:
+        try:
+            sub = yf.Ticker(c + ".T").history(start=START, auto_adjust=False, actions=True)
+            cl = sub["Close"].dropna(); cl = cl[cl > 0]
+            if FIRST.get(c): cl = cl[cl.index >= FIRST[c]]
+            cl.index = cl.index.tz_localize(None)
+            cl = clean(cl)
+            if len(cl) >= 5:
+                closes[c] = cl; dv = sub["Dividends"]; dv.index = dv.index.tz_localize(None); divs[c] = dv[(dv > 0) & (dv.index >= cl.index[0])]
+            print("refetch", c, len(cl), flush=True)
+        except Exception as e:
+            print("refetch fail", c, e, flush=True)
     n225 = yf.download("^N225", start=START, auto_adjust=False, progress=False)
     n225 = n225["Close"].squeeze().dropna()
     # 暦：トヨタの取引日
