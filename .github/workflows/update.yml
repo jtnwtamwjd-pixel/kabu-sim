@@ -1,0 +1,33 @@
+name: update-prices
+on:
+  schedule:
+    - cron: '30 7 * * 1-5'   # 16:30 JST, weekdays
+    - cron: '0 12 * * 1-5'   # 21:00 JST retry
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+concurrency: { group: pages-data, cancel-in-progress: false }
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install yfinance pandas
+      - run: python tools/fetch.py
+      - run: |
+          mkdir -p site
+          python tools/build.py data/raw.json site/data.json src.html site/index.html
+          touch site/.nojekyll
+      - name: publish to gh-pages
+        run: |
+          cd site
+          git init -q -b gh-pages
+          git config user.name github-actions
+          git config user.email github-actions@users.noreply.github.com
+          git add -A
+          git commit -qm "prices $(python -c "import json;print(json.load(open('data.json'))['last'])")"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages

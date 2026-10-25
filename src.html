@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>兜町トレーダー</title>
+<meta name="theme-color" content="#0d1117">
+<style>
+:root{
+  --bg:#0d1117;--panel:#161b22;--panel2:#1f2630;--line:#2d3642;--tx:#e6edf3;--sub:#8b98a5;
+  --up:#ff5a5f;--dn:#2fbf71;--acc:#f0b429;--blue:#58a6ff;--warn:#ff9f43;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",sans-serif;font-size:15px}
+body{min-height:100vh;overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;background:var(--panel2);border-radius:10px;padding:10px 12px;cursor:pointer}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.4}
+input,select{font:inherit;color:var(--tx);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px}
+.num{font-variant-numeric:tabular-nums}
+.up{color:var(--up)}.dn{color:var(--dn)}.sub{color:var(--sub)}
+.wrap{max-width:760px;margin:0 auto;padding:0 12px}
+.hide{display:none!important}
+/* title */
+#menu{padding-bottom:40px}
+.logo{text-align:center;padding:28px 0 6px}
+.logo h1{margin:0;font-size:30px;letter-spacing:.08em}
+.logo h1 span{color:var(--acc)}
+.logo p{margin:6px 0 0;color:var(--sub);font-size:13px}
+.ticker{overflow:hidden;white-space:nowrap;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:14px -12px;padding:6px 0;font-size:13px}
+.ticker div{display:inline-block;animation:tick 60s linear infinite;padding-left:100%}
+@keyframes tick{to{transform:translateX(-100%)}}
+.sec-t{margin:20px 2px 8px;font-size:13px;color:var(--sub);letter-spacing:.1em}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.scn{display:block;width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:9px}
+.scn b{font-size:16px}.scn .d{color:var(--sub);font-size:12.5px;margin-top:4px;line-height:1.5}
+.scn .r{float:right;font-size:12px;color:var(--acc)}
+.scn.live{border-color:#7a5d12;background:linear-gradient(135deg,#2a2110,#161b22)}
+.row{display:flex;gap:8px;align-items:center}
+.grow{flex:1}
+/* game */
+#hdr{position:sticky;top:0;z-index:5;background:rgba(13,17,23,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:8px 0 6px}
+#hdr .top{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--sub)}
+#hdr .eq{font-size:24px;font-weight:700;margin-top:2px}
+#hdr .st{display:flex;gap:14px;font-size:12.5px;margin-top:2px;flex-wrap:wrap}
+.prog{height:3px;background:var(--line);border-radius:2px;margin-top:6px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--acc)}
+.tabs{display:flex;gap:6px;margin:10px 0 8px}
+.tabs button{flex:1;padding:8px 4px;font-size:13.5px;background:var(--panel)}
+.tabs button.on{background:var(--acc);color:#111;font-weight:700}
+#main{padding-bottom:120px}
+.list .it{display:flex;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line);gap:8px;cursor:pointer}
+.list .it:active{background:var(--panel)}
+.it .nm{flex:1;min-width:0}
+.it .nm b{display:block;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it .nm small{color:var(--sub);font-size:11.5px}
+.it .px{text-align:right;min-width:92px}
+.it .px b{display:block;font-size:15px}
+.chg{display:inline-block;min-width:66px;text-align:right;font-size:12.5px}
+.badge{display:inline-block;font-size:10.5px;padding:1px 5px;border-radius:5px;background:#3a2f12;color:var(--acc);margin-left:4px;vertical-align:1px}
+.badge.s{background:#12323a;color:var(--blue)}
+.idx{background:var(--panel);border-radius:12px;padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.ctl{position:fixed;left:0;right:0;bottom:0;z-index:6;background:rgba(13,17,23,.97);border-top:1px solid var(--line);padding:8px 0 calc(8px + env(safe-area-inset-bottom))}
+.ctl .wrap{display:flex;gap:6px}
+.ctl button{flex:1;padding:12px 2px;font-size:14px;font-weight:600}
+.ctl .play{background:#2a2110;color:var(--acc)}
+.ctl .play.on{background:var(--acc);color:#111}
+.sortbar{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.sortbar button{padding:5px 10px;font-size:12.5px;border-radius:20px;background:var(--panel);white-space:nowrap}
+.sortbar button.on{background:#3a2f12;color:var(--acc)}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:13px}
+.kv div{display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding:4px 0}
+.kv span{color:var(--sub)}
+.news .n{padding:10px 2px;border-bottom:1px solid var(--line);font-size:14px;line-height:1.5}
+.news .n small{color:var(--sub);display:block;font-size:11.5px}
+.news .n.big{color:var(--acc)}
+/* sheet */
+.sheet{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}
+.sheet .in{background:var(--bg);border-top:1px solid var(--line);border-radius:18px 18px 0 0;width:100%;max-width:760px;max-height:94vh;overflow:auto;padding:12px 14px calc(18px + env(safe-area-inset-bottom))}
+.sheet .grab{width:44px;height:5px;background:var(--line);border-radius:3px;margin:0 auto 10px}
+.sheet h2{margin:0;font-size:19px}
+.rng{display:flex;gap:4px;margin:8px 0}
+.rng button{flex:1;padding:6px 0;font-size:12px;background:var(--panel)}
+.rng button.on{background:var(--panel2);color:var(--acc);font-weight:700}
+canvas{display:block;width:100%;touch-action:none}
+.trade{background:var(--panel);border-radius:14px;padding:12px;margin-top:12px}
+.seg{display:flex;background:var(--panel2);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;padding:8px 2px;font-size:13.5px;background:transparent}
+.seg button.on.b{background:var(--up);color:#fff;font-weight:700}
+.seg button.on.s{background:var(--dn);color:#fff;font-weight:700}
+.seg button.on.x{background:var(--blue);color:#111;font-weight:700}
+.qty{display:flex;gap:6px;align-items:center;margin:10px 0}
+.qty input{flex:1;text-align:center;font-size:18px;font-weight:700;min-width:0}
+.qty button{padding:10px 0;width:52px;font-size:13px}
+.go{width:100%;padding:14px;font-size:16px;font-weight:700;margin-top:8px}
+.go.b{background:var(--up);color:#fff}.go.s{background:var(--dn);color:#fff}.go.x{background:var(--blue);color:#111}
+.opt{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.opt .seg{min-width:190px}
+.opt .seg button.on{background:var(--acc);color:#111;font-weight:700}
+.toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:40;background:#2a2110;border:1px solid var(--acc);color:var(--tx);padding:10px 14px;border-radius:12px;max-width:92vw;font-size:14px;box-shadow:0 8px 30px rgba(0,0,0,.5);transition:opacity .3s}
+.big-n{font-size:34px;font-weight:800;text-align:center;margin:8px 0 2px}
+.rank{font-size:64px;font-weight:900;text-align:center;line-height:1;margin-top:6px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--sub);margin:6px 0}
+.legend i{display:inline-block;width:12px;height:3px;border-radius:2px;vertical-align:middle;margin-right:4px}
+table.tr{width:100%;border-collapse:collapse;font-size:12.5px}
+table.tr td{padding:6px 3px;border-bottom:1px solid var(--line)}
+.help p{line-height:1.7;font-size:14px;margin:6px 0}
+.note{font-size:11.5px;color:var(--sub);line-height:1.6}
+</style>
+</head>
+<body>
+<div id="menu" class="wrap"></div>
+<div id="game" class="hide">
+  <div id="hdr"><div class="wrap" id="hdrIn"></div></div>
+  <div class="wrap" id="main"></div>
+  <div class="ctl"><div class="wrap" id="ctl"></div></div>
+</div>
+<div id="sheet" class="sheet hide"><div class="in" id="sheetIn"></div></div>
+<div id="toast" class="toast hide"></div>
+
+<script id="pricedata" type="application/json">__DATA__</script>
+<script>
+'use strict';
+// ---------- 銘柄マスタ ----------
+const META={
+ N225:['日経平均株価','指数'],
+ '1306':['TOPIX連動型ETF','ETF'],
+ '7203':['トヨタ自動車','輸送用機器'],'6758':['ソニーグループ','電気機器'],'9984':['ソフトバンクグループ','情報・通信'],
+ '6861':['キーエンス','電気機器'],'8306':['三菱UFJフィナンシャルG','銀行'],'9432':['NTT','情報・通信'],
+ '6501':['日立製作所','電気機器'],'8035':['東京エレクトロン','電気機器'],'9983':['ファーストリテイリング','小売'],
+ '7974':['任天堂','その他製品'],'4063':['信越化学工業','化学'],'6098':['リクルートHD','サービス'],
+ '8058':['三菱商事','卸売'],'4502':['武田薬品工業','医薬品'],'7267':['本田技研工業','輸送用機器'],
+ '9433':['KDDI','情報・通信'],'6920':['レーザーテック','電気機器'],'7011':['三菱重工業','機械'],
+ '9101':['日本郵船','海運'],'2914':['JT','食料品'],'4661':['オリエンタルランド','サービス'],
+ '6594':['ニデック','電気機器'],'8001':['伊藤忠商事','卸売'],'6367':['ダイキン工業','機械'],
+ '4568':['第一三共','医薬品'],'7741':['HOYA','精密機器'],'3382':['セブン&アイHD','小売'],
+ '9201':['日本航空','空運'],'8316':['三井住友フィナンシャルG','銀行'],'6702':['富士通','電気機器'],
+ '7201':['日産自動車','輸送用機器'],'4755':['楽天グループ','サービス'],'2802':['味の素','食料品'],
+ '6752':['パナソニックHD','電気機器'],'9020':['JR東日本','陸運'],'8766':['東京海上HD','保険'],
+ '5401':['日本製鉄','鉄鋼'],'6857':['アドバンテスト','電気機器'],'4385':['メルカリ','情報・通信'],
+ '3659':['ネクソン','情報・通信'],'2413':['エムスリー','サービス'],'6146':['ディスコ','機械'],
+ '7832':['バンダイナムコHD','その他製品'],'9766':['コナミグループ','情報・通信']
+};
+// ---------- 実際の出来事 ----------
+const EVENTS=[
+ ['2001-09-12','米同時多発テロの翌営業日。世界の株式市場が急落',1],
+ ['2003-04-28','日経平均がバブル後最安値（当時）7,607円を記録'],
+ ['2005-09-12','郵政選挙で自民党が圧勝。外国人買いで「小泉相場」が加速'],
+ ['2006-01-17','ライブドアに東京地検の強制捜査。新興株を中心に急落（ライブドア・ショック）',1],
+ ['2007-02-28','中国株急落をきっかけに世界同時株安（上海ショック）'],
+ ['2007-08-10','仏BNPパリバ傘下ファンドの解約凍結でサブプライム問題が表面化'],
+ ['2008-09-16','米リーマン・ブラザーズが経営破綻。世界的な金融危機へ',1],
+ ['2008-10-27','日経平均が7,162円まで下落、26年ぶりの安値',1],
+ ['2009-03-10','日経平均がバブル後最安値7,054円（終値）を記録'],
+ ['2009-08-31','衆院選で民主党が圧勝し政権交代'],
+ ['2011-03-11','東日本大震災が発生（14時46分）',1],
+ ['2011-03-15','原発事故への懸念から日経平均が1,015円安、下落率10.6%',1],
+ ['2011-10-31','円相場が戦後最高値の1ドル=75円台。政府・日銀が円売り介入'],
+ ['2012-11-15','野田首相が衆院解散を表明。円安・株高の「アベノミクス相場」が始まる',1],
+ ['2012-12-17','衆院選で自民党が圧勝、第2次安倍政権へ'],
+ ['2013-04-04','日銀・黒田総裁が「異次元緩和」を発表',1],
+ ['2013-05-23','日経平均が1,143円の急落'],
+ ['2014-10-31','日銀が追加金融緩和を発表（黒田バズーカ第2弾）',1],
+ ['2015-08-24','中国経済の減速懸念から世界同時株安（チャイナ・ショック）'],
+ ['2016-01-29','日銀がマイナス金利政策の導入を決定'],
+ ['2016-06-24','英国の国民投票でEU離脱派が勝利。日経平均は1,286円安',1],
+ ['2016-11-09','米大統領選でトランプ氏が勝利'],
+ ['2018-02-06','米国株急落（VIXショック）を受け日経平均が1,071円安'],
+ ['2018-12-25','米国株安が波及し日経平均が1,010円安、2万円割れ'],
+ ['2019-05-07','「令和」最初の取引日'],
+ ['2020-01-31','WHOが新型コロナウイルスについて緊急事態を宣言'],
+ ['2020-03-19','日経平均がコロナショックの底値16,552円をつける',1],
+ ['2020-04-07','政府が7都府県に緊急事態宣言を発令'],
+ ['2020-11-10','米ファイザーがワクチンの高い有効性を発表し株価急騰',1],
+ ['2021-02-15','日経平均が30年半ぶりに3万円台を回復'],
+ ['2022-02-24','ロシアがウクライナへ侵攻',1],
+ ['2022-12-20','日銀が長期金利の変動幅を拡大、事実上の利上げと受け止められる'],
+ ['2023-03-13','米シリコンバレー銀行の破綻を受け金融不安が広がる'],
+ ['2024-02-22','日経平均が39,098円となり、バブル期を超えて34年ぶりに史上最高値を更新',1],
+ ['2024-03-04','日経平均が初めて4万円台に乗せる'],
+ ['2024-03-19','日銀がマイナス金利政策を解除'],
+ ['2024-07-11','日経平均が終値で史上最高値42,224円を記録'],
+ ['2024-08-05','日経平均が4,451円安、ブラックマンデーを超える過去最大の下げ幅',1],
+ ['2024-08-06','日経平均が3,217円高、過去最大の上げ幅',1],
+ ['2024-11-06','米大統領選でトランプ氏が勝利'],
+ ['2025-04-07','米国の相互関税発表を受け日経平均が2,644円安',1],
+ ['2025-10-06','高市早苗氏の自民党総裁選出を受け日経平均が2,175円高',1]
+];
+// ---------- シナリオ ----------
+const SCN=[
+ {id:'recent',name:'直近1年',d:'最新の終値までの約1年間。いまの相場に一番近い腕試し。',rel:245},
+ {id:'random',name:'🎲 ランダム1年',d:'2001年以降のどこかの1年間。ブラインドにすると銘柄名と日付が隠れて、後知恵が効きません。',random:250},
+ {id:'it',name:'ITバブル崩壊',d:'2000年春の天井から2003年4月の大底まで。ハイテク株が崩れていく中で資産を守れるか。',from:'2000-04-03',to:'2003-04-30'},
+ {id:'koizumi',name:'小泉・郵政相場',d:'2003年の大底から2006年まで。日本株が大きく戻した上昇相場。',from:'2003-04-28',to:'2006-04-28'},
+ {id:'lehman',name:'リーマンショック',d:'2007年夏のサブプライム問題から2009年3月の大底まで。',from:'2007-07-02',to:'2009-03-31'},
+ {id:'quake',name:'東日本大震災',d:'2011年の1年間。震災と超円高を乗り切る。',from:'2011-01-04',to:'2011-12-30'},
+ {id:'abe',name:'アベノミクス',d:'2012年11月の解散表明から2015年夏まで。円安・株高の波に乗れ。',from:'2012-11-01',to:'2015-08-31'},
+ {id:'covid',name:'コロナショック',d:'2020年の1年間。暴落と、その後のV字回復。',from:'2020-01-06',to:'2020-12-30'},
+ {id:'peak',name:'最高値更新と令和のブラックマンデー',d:'2023年10月〜2024年末。34年ぶりの最高値と、史上最大の暴落・暴騰。',from:'2023-10-02',to:'2024-12-30'},
+ {id:'last3',name:'直近3年',d:'最新の終値までの約3年間。長期戦。',rel:735},
+ {id:'free',name:'フリー',d:'開始日と期間を自分で決める。',free:1}
+];
+// ---------- データ ----------
+let D=null; // decoded
+function decode(R){
+  const dates=[R.d0];let t=Date.parse(R.d0+'T00:00:00Z');
+  for(let i=0;i<R.dd.length;i++){t+=(R.dd.charCodeAt(i)-48)*864e5;dates.push(new Date(t).toISOString().slice(0,10));}
+  const n=dates.length,P={},DIV={},codes=[];
+  for(const x of R.t){
+    const a=new Float64Array(n).fill(NaN);let p=0;const ds=x.p.split(',');
+    for(let i=0;i<ds.length;i++){if(ds[i])p+=parseInt(ds[i],16);a[x.s+i]=p/10;}
+    P[x.c]=a;const dv={};for(const [i,v] of x.dv)dv[x.s+i]=v/100;DIV[x.c]=dv;
+    if(x.c!=='N225'&&META[x.c])codes.push(x.c);
+  }
+  codes.sort((a,b)=>a.localeCompare(b));
+  const ev={};for(const e of EVENTS){const i=idxOf(dates,e[0]);if(i>=0&&dates[i]>=e[0])(ev[i]=ev[i]||[]).push({t:e[1],big:!!e[2]});}
+  // 日経平均の大きな動きと最高値を自動ニュース化
+  const N=P.N225;let hi=0;
+  for(let i=1;i<n;i++){
+    const r=N[i]/N[i-1]-1;
+    if(Math.abs(r)>=0.04&&!(ev[i]&&ev[i].length))(ev[i]=ev[i]||[]).push({t:`日経平均が${r>0?'急騰':'急落'}、前日比${r>0?'+':''}${(r*100).toFixed(1)}%（${fmt(N[i])}円）`,big:Math.abs(r)>=0.06,auto:1});
+    if(N[i]>hi&&i>2500&&N[i]>38915.87&&N[i-1]<=hi&&!ev[i])(ev[i]=ev[i]||[]).push({t:`日経平均が終値で史上最高値を更新（${fmt(N[i])}円）`,auto:1});
+    if(N[i]>hi)hi=N[i];
+    const k=10000;if(Math.floor(N[i]/k)>Math.floor(N[i-1]/k)&&N[i]>=40000&&!ev[i]&&Math.floor(N[i]/k)*k>maxBelow(N,i,k))(ev[i]=ev[i]||[]).push({t:`日経平均が初めて${Math.floor(N[i]/k)}万円台に乗せる`,auto:1});
+  }
+  return {R,dates,n,P,DIV,codes,ev,last:n-1};
+}
+function maxBelow(N,i,k){let m=0;for(let j=0;j<i;j++)if(N[j]>m)m=N[j];return m}
+function idxOf(dates,s){let lo=0,hi=dates.length-1;if(s<=dates[0])return 0;if(s>dates[hi])return hi;while(lo<hi){const m=(lo+hi)>>1;if(dates[m]<s)lo=m+1;else hi=m;}return lo}
+// ---------- 表示ユーティリティ ----------
+const $=id=>document.getElementById(id);
+function fmt(v,d=0){if(!isFinite(v))return '—';return v.toLocaleString('ja-JP',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function pxf(v){if(!isFinite(v))return '—';return fmt(v,v<1000&&v%1!==0?1:(v%1!==0?1:0))}
+function yen(v){const s=v<0?'-':'';v=Math.abs(v);if(v>=1e8)return s+(v/1e8).toFixed(v>=1e10?1:2)+'億円';if(v>=1e6)return s+fmt(v/1e4)+'万円';return s+fmt(Math.round(v))+'円'}
+function pct(v,d=2){if(!isFinite(v))return '—';return (v>0?'+':'')+(v*100).toFixed(d)+'%'}
+function cls(v){return v>0?'up':v<0?'dn':''}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function toast(msg,ms=2600){const t=$('toast');t.innerHTML=msg;t.classList.remove('hide');t.style.opacity=1;clearTimeout(toast.h);toast.h=setTimeout(()=>{t.style.opacity=0;setTimeout(()=>t.classList.add('hide'),300)},ms)}
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+
+// ---------- ゲーム状態 ----------
+const FEE=0.001, SHORT_RATE=0.011, MARGIN_MIN=0.3, SHORT_LEV=2;
+let G=null, UI={tab:'mkt',sort:'code',detail:null,range:'6M',side:'buy',play:0,timer:null};
+function px(c,i=G.day){return D.P[c]?D.P[c][i]:NaN}
+function listed(c,i=G.day){return isFinite(px(c,i))}
+function nameOf(c){if(G&&G.set.blind){if(c==='N225')return '市場平均';return '銘柄'+G.alias[c]}return META[c][0]}
+function codeLabel(c){return G&&G.set.blind?META[c][1]:c+' · '+META[c][1]}
+function dateLabel(i){return G&&G.set.blind?`Day ${i-G.start+1}`:D.dates[i]}
+function equity(i=G.day){let e=G.cash;for(const c in G.pos)e+=G.pos[c].q*px(c,i);return e}
+function longVal(){let v=0;for(const c in G.pos)if(G.pos[c].q>0)v+=G.pos[c].q*px(c);return v}
+function shortVal(){let v=0;for(const c in G.pos)if(G.pos[c].q<0)v+=-G.pos[c].q*px(c);return v}
+function buyPower(){return Math.max(0,G.cash-shortVal())}
+function shortRoom(){return Math.max(0,equity()*SHORT_LEV-shortVal())}
+function bench(i=G.day){return D.P.N225[i]/D.P.N225[G.start]-1}
+
+function newGame(sc,set){
+  let s,e;
+  if(sc.rel){e=D.last;s=Math.max(0,e-sc.rel)}
+  else if(sc.random){const lo=idxOf(D.dates,'2001-01-04');s=lo+Math.floor(Math.random()*(D.last-sc.random-lo));e=s+sc.random}
+  else if(sc.free){s=idxOf(D.dates,set.from);e=Math.min(D.last,s+set.len)}
+  else{s=idxOf(D.dates,sc.from);e=Math.min(D.last,idxOf(D.dates,sc.to))}
+  const alias={};const L='ABCDEFGHIJKLMNOPQRSTUVWXYZ';const sh=D.codes.slice().sort(()=>Math.random()-.5);sh.forEach((c,k)=>alias[c]=k<26?L[k]:L[k-26]+L[k-26]);
+  G={mode:'scn',scn:sc.id,scnName:sc.name,start:s,end:e,day:s,cash:set.cap,init:set.cap,pos:{},hist:[[s,set.cap]],trades:[],news:[],set,alias,divs:0,fees:0,realized:0};
+  pushNews(s);
+  saveGame();
+}
+function newLive(cap){
+  const s=D.last;
+  G={mode:'live',scn:'live',scnName:'リアル口座',start:s,end:Infinity,day:s,cash:cap,init:cap,pos:{},hist:[[s,cap]],trades:[],news:[],set:{cap,fee:1,unit:100,short:1,blind:0},alias:{},divs:0,fees:0,realized:0,startDate:D.dates[s]};
+  saveGame();
+}
+function saveGame(){
+  if(!G)return;
+  const o=Object.assign({},G,{startDate:D.dates[G.start],dayDate:D.dates[G.day],endDate:isFinite(G.end)?D.dates[G.end]:null,hist:G.hist.map(h=>[D.dates[h[0]],h[1]]),trades:G.trades.map(t=>Object.assign({},t,{i:D.dates[t.i]})),news:G.news.map(n=>Object.assign({},n,{i:D.dates[n.i]}))});
+  LS.set(G.mode==='live'?'kabu_live':'kabu_scn',o);
+}
+function loadGame(key){
+  const o=LS.get(key,null);if(!o)return null;
+  const f=d=>idxOf(D.dates,d);
+  o.start=f(o.startDate);o.day=f(o.dayDate);o.end=o.endDate?f(o.endDate):Infinity;
+  o.hist=o.hist.map(h=>[f(h[0]),h[1]]);o.trades=o.trades.map(t=>Object.assign(t,{i:f(t.i)}));o.news=o.news.map(n=>Object.assign(n,{i:f(n.i)}));
+  return o;
+}
+function pushNews(i){const e=D.ev[i];if(!e)return null;let big=null;for(const x of e){G.news.unshift({i,t:x.t,big:x.big});if(x.big)big=x}return big||e[0]}
+
+// 1営業日進める
+function stepDay(){
+  if(G.day>=G.end)return false;
+  const prev=G.day,i=++G.day;
+  const cd=(Date.parse(D.dates[i])-Date.parse(D.dates[prev]))/864e5;
+  for(const c in G.pos){
+    const p=G.pos[c],dv=D.DIV[c][i];
+    if(dv){const amt=p.q*dv;G.cash+=amt;G.divs+=amt;G.news.unshift({i,t:`${nameOf(c)}の配当${p.q>0?'を受け取り':'相当額（配当落調整金）を支払い'}：${yen(Math.abs(amt))}（1株${dv}円）`,me:1});}
+    if(!isFinite(px(c,i))){ // 上場廃止等：最終値で清算
+      const last=px(c,prev);G.cash+=p.q*last;delete G.pos[c];
+    }
+  }
+  const sv=shortVal();
+  if(sv>0){const f=sv*SHORT_RATE*cd/365;G.cash-=f;G.fees+=f;}
+  let msg=null;
+  if(sv>0&&equity()<sv*MARGIN_MIN){
+    for(const c in G.pos)if(G.pos[c].q<0)doTrade(c,'cover',-G.pos[c].q,true);
+    msg='⚠️ 委託保証金率が30%を下回ったため、空売りを強制決済しました';G.news.unshift({i,t:msg,big:true,me:1});
+  }
+  G.hist.push([i,equity()]);
+  const ev=G.set.blind?null:pushNews(i);
+  return {ev,msg};
+}
+
+function doTrade(c,side,q,forced){
+  const p=px(c);if(!isFinite(p)||q<=0)return '株価がありません';
+  const amt=p*q,fee=G.set.fee?Math.round(amt*FEE):0;
+  const pos=G.pos[c]||{q:0,cost:0};
+  if(side==='buy'){
+    if(pos.q<0)return '空売り中の銘柄は「返済買い」で決済してください';
+    if(amt+fee>buyPower()+1e-6)return '買付余力が足りません';
+    pos.cost=(pos.cost*pos.q+amt)/(pos.q+q);pos.q+=q;G.cash-=amt+fee;
+  }else if(side==='sell'){
+    if(pos.q<q)return '保有株数が足りません';
+    const pl=(p-pos.cost)*q-fee;G.realized+=pl;pos.q-=q;G.cash+=amt-fee;
+  }else if(side==='short'){
+    if(pos.q>0)return '保有中の銘柄は空売りできません（先に売却）';
+    if(!forced&&amt>shortRoom()+1e-6)return '信用余力が足りません';
+    pos.cost=(pos.cost*(-pos.q)+amt)/(-pos.q+q);pos.q-=q;G.cash+=amt-fee;
+  }else if(side==='cover'){
+    if(-pos.q<q)return '空売り株数が足りません';
+    const pl=(pos.cost-p)*q-fee;G.realized+=pl;pos.q+=q;G.cash-=amt+fee;
+  }
+  G.fees+=fee;
+  if(pos.q===0)delete G.pos[c];else G.pos[c]=pos;
+  G.trades.unshift({i:G.day,c,side,q,p,fee,forced:!!forced});
+  G.hist[G.hist.length-1]=[G.day,equity()];
+  saveGame();
+  return null;
+}
+
+// ---------- チャート ----------
+function setupCanvas(cv,h){const dpr=window.devicePixelRatio||1;const w=cv.clientWidth||cv.parentNode.clientWidth;cv.width=w*dpr;cv.height=h*dpr;cv.style.height=h+'px';const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);return {x,w,h}}
+function drawChart(cv,o,hover){
+  const {x,w,h}=setupCanvas(cv,o.h||220);const padR=58,padB=20,padT=8;
+  const cw=w-padR,ch=h-padB-padT;
+  let mn=Infinity,mx=-Infinity;
+  for(const L of o.lines)for(let i=o.i0;i<=o.i1;i++){const v=L.v[i-(L.off||0)];if(isFinite(v)){if(v<mn)mn=v;if(v>mx)mx=v}}
+  if(o.ref!=null&&isFinite(o.ref)){mn=Math.min(mn,o.ref);mx=Math.max(mx,o.ref)}
+  if(!isFinite(mn)){x.fillStyle='#8b98a5';x.fillText('データなし',10,20);return}
+  if(mx===mn){mx+=1;mn-=1}
+  const pad=(mx-mn)*.06;mn-=pad;mx+=pad;
+  const N=o.i1-o.i0||1;
+  const X=i=>(i-o.i0)/N*cw,Y=v=>padT+(1-(v-mn)/(mx-mn))*ch;
+  x.font='11px sans-serif';x.strokeStyle='#2d3642';x.lineWidth=1;x.fillStyle='#8b98a5';x.textBaseline='middle';
+  for(let k=0;k<=4;k++){const v=mn+(mx-mn)*k/4,y=Y(v);x.beginPath();x.moveTo(0,y);x.lineTo(cw,y);x.stroke();x.fillText(o.yf?o.yf(v):fmt(v),cw+5,y)}
+  x.textBaseline='alphabetic';
+  const lab=[o.i0,Math.round((o.i0+o.i1)/2),o.i1];
+  lab.forEach((i,k)=>{const s=o.xf(i);const tw=x.measureText(s).width;x.fillText(s,Math.min(Math.max(0,X(i)-tw/2),cw-tw),h-4)});
+  if(o.ref!=null&&isFinite(o.ref)){x.setLineDash([4,4]);x.strokeStyle='#f0b429';x.beginPath();x.moveTo(0,Y(o.ref));x.lineTo(cw,Y(o.ref));x.stroke();x.setLineDash([])}
+  for(const L of o.lines){
+    x.strokeStyle=L.color;x.lineWidth=L.w||1.6;x.beginPath();let st=false;
+    const step=Math.max(1,Math.floor(N/(cw*1.5)));
+    for(let i=o.i0;i<=o.i1;i+=(i+step>o.i1&&i<o.i1)?(o.i1-i):step){const v=L.v[i-(L.off||0)];if(!isFinite(v)){st=false;continue}const px_=X(i),py=Y(v);if(!st){x.moveTo(px_,py);st=true}else x.lineTo(px_,py)}
+    x.stroke();
+    if(L.fill){x.lineTo(cw,padT+ch);x.lineTo(X(Math.max(o.i0,firstFinite(L.v,o.i0,o.i1,L.off||0))),padT+ch);x.closePath();const g=x.createLinearGradient(0,padT,0,padT+ch);g.addColorStop(0,L.fill);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fill()}
+  }
+  if(o.marks)for(const m of o.marks){if(m.i<o.i0||m.i>o.i1)continue;const v=o.lines[0].v[m.i];if(!isFinite(v))continue;x.fillStyle=m.c;x.beginPath();const yy=Y(v);if(m.up){x.moveTo(X(m.i),yy+4);x.lineTo(X(m.i)-5,yy+12);x.lineTo(X(m.i)+5,yy+12)}else{x.moveTo(X(m.i),yy-4);x.lineTo(X(m.i)-5,yy-12);x.lineTo(X(m.i)+5,yy-12)}x.fill()}
+  if(hover!=null){
+    const i=Math.max(o.i0,Math.min(o.i1,hover));x.strokeStyle='#8b98a5';x.beginPath();x.moveTo(X(i),padT);x.lineTo(X(i),padT+ch);x.stroke();
+    const rows=[o.xf(i)].concat(o.lines.filter(L=>L.label).map(L=>L.label+' '+(o.yf?o.yf(L.v[i-(L.off||0)]):pxf(L.v[i-(L.off||0)]))));
+    x.font='12px sans-serif';const bw=Math.max(...rows.map(r=>x.measureText(r).width))+14,bh=rows.length*16+8;
+    let bx=X(i)+8;if(bx+bw>cw)bx=X(i)-bw-8;x.fillStyle='rgba(22,27,34,.94)';x.strokeStyle='#2d3642';x.fillRect(bx,padT+2,bw,bh);x.strokeRect(bx,padT+2,bw,bh);
+    x.fillStyle='#e6edf3';rows.forEach((r,k)=>x.fillText(r,bx+7,padT+18+k*16));
+  }
+  if(!cv._bound){cv._bound=1;const mv=e=>{const r=cv.getBoundingClientRect();const cx=(e.touches?e.touches[0].clientX:e.clientX)-r.left;const oo=cv._o;const NN=oo.i1-oo.i0||1;drawChart(cv,oo,Math.round(oo.i0+cx/(r.width-58)*NN))};
+    cv.addEventListener('pointermove',mv);cv.addEventListener('pointerdown',mv);cv.addEventListener('pointerleave',()=>drawChart(cv,cv._o));cv.addEventListener('pointerup',e=>{if(e.pointerType!=='mouse')drawChart(cv,cv._o)})}
+  cv._o=o;
+}
+function firstFinite(v,a,b,off){for(let i=a;i<=b;i++)if(isFinite(v[i-off]))return i;return a}
+function sma(arr,n,i0,i1){const out=new Float64Array(arr.length).fill(NaN);for(let i=i0;i<=i1;i++){let s=0,k=0;for(let j=i-n+1;j<=i;j++){if(j>=0&&isFinite(arr[j])){s+=arr[j];k++}}if(k===n)out[i]=s/n}return out}
+
+// ---------- メニュー ----------
+function renderMenu(){
+  stopPlay();$('game').classList.add('hide');$('menu').classList.remove('hide');
+  const rec=LS.get('kabu_rec',{}),save=LS.get('kabu_scn',null),live=LS.get('kabu_live',null);
+  const N=D.P.N225,L=D.last;
+  const tk=['N225',...D.codes].map(c=>{const a=D.P[c][L],b=D.P[c][L-1];return `${META[c][0]} <span class="${cls(a-b)}">${pxf(a)} ${pct(a/b-1)}</span>`}).join('　｜　');
+  let h=`<div class="logo"><h1>兜町<span>トレーダー</span></h1><p>実際の東証株価で遊ぶ投資シミュレーション</p></div>
+  <div class="ticker"><div>${tk}</div></div>
+  <div class="card row"><div class="grow"><div class="sub" style="font-size:12px">日経平均株価（${D.dates[L]} 終値）</div><div class="num" style="font-size:22px;font-weight:700">${fmt(N[L],2)} <span class="${cls(N[L]-N[L-1])}" style="font-size:14px">${pct(N[L]/N[L-1]-1)}</span></div></div><canvas id="mN" style="width:46%"></canvas></div>`;
+  if(save&&!save.done)h+=`<button class="scn" style="border-color:var(--acc)" onclick="resume()"><b>▶ 続きから</b><span class="r">${esc(save.scnName)}</span><div class="d">${save.set.blind?'ブラインド':esc(save.dayDate)} 時点 ・ 総資産 ${yen(save.hist[save.hist.length-1][1])}</div></button>`;
+  h+=`<div class="sec-t">📡 最新相場で運用</div>`;
+  if(live){const lg=loadGame('kabu_live');const eq=liveEquity(lg);h+=`<button class="scn live" onclick="openLive()"><b>リアル口座</b><span class="r">${pct(eq/lg.init-1)}</span><div class="d">${esc(lg.startDate)} 開設 ・ 総資産 ${yen(eq)}<br>最新の終値が反映されるたびに資産が動きます</div></button>`}
+  else h+=`<button class="scn live" onclick="liveSetup()"><b>リアル口座を開設</b><div class="d">${D.dates[L]} の終値からスタート。データが毎営業日更新されると、あなたのポートフォリオも本物の相場と一緒に動きます。</div></button>`;
+  h+=`<div class="sec-t">⏳ 過去の相場に挑戦</div>`;
+  for(const s of SCN){const r=rec[s.id];h+=`<button class="scn" onclick="setup('${s.id}')"><b>${s.name}</b>${r?`<span class="r">最高 ${r.rank} ${pct(r.ret,1)}</span>`:''}<div class="d">${s.d}${s.from?`<br>${s.from} 〜 ${s.to}`:''}</div></button>`}
+  h+=`<div class="sec-t">その他</div><div class="row"><button class="grow" onclick="showHelp()">遊び方</button><button class="grow" onclick="showRecords()">成績</button></div>
+  <p class="note" style="margin-top:18px">株価：東京証券取引所 上場銘柄の日次終値（株式分割調整済み、Yahoo Finance 経由で取得）。2000年1月〜${D.dates[L]}。ゲーム内の取引はすべて仮想で、実際の売買は行われません。投資助言ではありません。</p>`;
+  $('menu').innerHTML=h;
+  const cv=$('mN');drawChart(cv,{h:70,i0:L-245,i1:L,lines:[{v:N,color:N[L]>=N[L-245]?'#ff5a5f':'#2fbf71',w:1.4}],xf:()=>'',yf:()=>''});
+  window.scrollTo(0,0);
+}
+function liveEquity(lg){let e=lg.cash;for(const c in lg.pos)e+=lg.pos[c].q*D.P[c][D.last];return e}
+function setup(id){
+  const sc=SCN.find(s=>s.id===id);const last=LS.get('kabu_set',{cap:10000000,fee:1,unit:100,short:1,blind:0});
+  if(LS.get('kabu_scn',null)&&!LS.get('kabu_scn').done&&!confirm('進行中のゲームは上書きされます。よろしいですか？'))return;
+  const S=Object.assign({},last,{blind:id==='random'?last.blind:0,from:'2008-01-04',len:245});
+  const opt=(k,label,vals)=>`<div class="opt"><span>${label}</span><div class="seg" data-k="${k}">${vals.map(([v,t])=>`<button class="${S[k]==v?'on':''}" data-v="${v}">${t}</button>`).join('')}</div></div>`;
+  let h=`<div class="grab"></div><h2>${sc.name}</h2><p class="sub" style="font-size:13px;margin:6px 0 4px">${sc.d}</p>`;
+  if(sc.free)h+=`<div class="opt"><span>開始日</span><input type="date" id="fFrom" value="${S.from}" min="${D.dates[0]}" max="${D.dates[D.last-20]}"></div>`+opt('len','期間',[[60,'3ヶ月'],[125,'半年'],[245,'1年'],[735,'3年']]);
+  h+=opt('cap','初期資金',[[1000000,'100万'],[3000000,'300万'],[10000000,'1000万'],[100000000,'1億']])
+   +opt('unit','売買単位',[[100,'100株'],[1,'1株']])
+   +opt('fee','手数料',[[1,'0.1%'],[0,'無料']])
+   +opt('short','空売り',[[1,'あり'],[0,'なし']])
+   +opt('blind','ブラインド',[[0,'オフ'],[1,'オン']])
+   +`<p class="note">ブラインド：銘柄名・日付・ニュースを隠します（業種と株価は表示）。売買はその日の終値で約定します。</p>
+   <button class="go b" style="background:var(--acc);color:#111" id="startBtn">スタート</button><button class="go" onclick="closeSheet()">やめる</button>`;
+  openSheet(h);
+  $('sheetIn').querySelectorAll('.seg[data-k]').forEach(sg=>sg.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;sg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');S[sg.dataset.k]=+b.dataset.v}));
+  $('startBtn').onclick=()=>{if(sc.free)S.from=$('fFrom').value||S.from;LS.set('kabu_set',{cap:S.cap,fee:S.fee,unit:S.unit,short:S.short,blind:S.blind});newGame(sc,S);closeSheet();startGame()};
+}
+function liveSetup(){
+  const S={cap:10000000};
+  openSheet(`<div class="grab"></div><h2>リアル口座を開設</h2><p class="sub" style="font-size:13px;line-height:1.6">${D.dates[D.last]} の終値から運用を始めます。時間は自動では進まず、新しい営業日の終値データが届くたびに（公開版は毎営業日の夕方に自動更新）資産が動きます。配当も実際の権利落ち日に入金されます。</p>
+  <div class="opt"><span>初期資金</span><div class="seg" id="lcap">${[[1000000,'100万'],[3000000,'300万'],[10000000,'1000万'],[100000000,'1億']].map(([v,t])=>`<button class="${v===S.cap?'on':''}" data-v="${v}">${t}</button>`).join('')}</div></div>
+  <p class="note">売買単位100株・手数料0.1%・空売りあり。</p>
+  <button class="go" style="background:var(--acc);color:#111" id="lgo">開設する</button><button class="go" onclick="closeSheet()">やめる</button>`);
+  $('lcap').onclick=e=>{const b=e.target.closest('button');if(!b)return;$('lcap').querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');S.cap=+b.dataset.v};
+  $('lgo').onclick=()=>{newLive(S.cap);closeSheet();startGame()};
+}
+function openLive(){
+  G=loadGame('kabu_live');
+  // 前回以降に届いた営業日を処理（配当・貸株料・資産推移）
+  const before=G.day;let n=0;G.end=D.last;
+  while(G.day<D.last){stepDay();n++}
+  G.end=Infinity;saveGame();startGame();
+  if(n>0)toast(`📈 ${n}営業日分の新しい終値を反映しました（${D.dates[before]} → ${D.dates[D.last]}）`,4000);
+}
+function resume(){G=loadGame('kabu_scn');startGame()}
+function startGame(){
+  $('menu').classList.add('hide');$('game').classList.remove('hide');UI.tab='mkt';UI.detail=null;render();window.scrollTo(0,0);
+}
+
+// ---------- ゲーム画面 ----------
+function render(){renderHdr();renderMain();renderCtl()}
+function renderHdr(){
+  const eq=equity(),r=eq/G.init-1,b=bench();
+  const live=G.mode==='live';
+  const prog=live?100:(G.day-G.start)/(G.end-G.start)*100;
+  const dPrev=G.hist.length>1?G.hist[G.hist.length-2][1]:G.init;
+  $('hdrIn').innerHTML=`<div class="top"><span>${esc(G.scnName)}${G.set.blind?' 🙈':''}</span><span class="num">${live?'📡 '+D.dates[G.day]+' 終値':dateLabel(G.day)+(G.set.blind?'':` (${'日月火水木金土'[new Date(D.dates[G.day]).getDay()]})`)+` ・ 残り${G.end-G.day}日`}</span></div>
+   <div class="row"><div class="eq num grow">${yen(eq)}</div><button style="padding:6px 10px;font-size:12px" onclick="menuSheet()">≡</button></div>
+   <div class="st num"><span>損益 <b class="${cls(r)}">${pct(r)}</b></span><span>前日比 <b class="${cls(eq-dPrev)}">${pct(eq/dPrev-1)}</b></span><span>${G.set.blind?'市場平均':'日経平均'} <b class="${cls(b)}">${pct(b)}</b></span><span>現金 ${yen(G.cash)}</span></div>
+   ${live?'':`<div class="prog"><i style="width:${prog}%"></i></div>`}`;
+}
+function renderCtl(){
+  if(G.mode==='live'){
+    $('ctl').innerHTML=`<button onclick="renderMenu()">🏠 メニュー</button><button onclick="checkUpdate(true)">🔄 最新データ確認</button>`;return;
+  }
+  const done=G.day>=G.end;
+  $('ctl').innerHTML=done?`<button class="play on" onclick="finish()">🏁 結果を見る</button>`:
+   `<button onclick="adv(1)">+1日</button><button onclick="adv(5)">+1週</button><button onclick="adv(21)">+1月</button><button class="play ${UI.play?'on':''}" onclick="togglePlay()">${UI.play?'⏸ 停止':'▶ 自動'}</button>`;
+}
+function renderMain(){
+  const t=UI.tab;
+  let h=`<div class="tabs">${[['mkt','銘柄'],['pf','保有'],['news','ニュース'],['log','取引']].map(([k,n])=>`<button class="${t===k?'on':''}" onclick="setTab('${k}')">${n}${k==='pf'&&Object.keys(G.pos).length?` (${Object.keys(G.pos).length})`:''}</button>`).join('')}</div>`;
+  if(t==='mkt')h+=mktView();else if(t==='pf')h+=pfView();else if(t==='news')h+=newsView();else h+=logView();
+  $('main').innerHTML=h;
+  if(t==='pf')drawPf();
+}
+function setTab(k){UI.tab=k;renderMain();window.scrollTo(0,0)}
+function chgOf(c,n=1){const a=px(c),b=px(c,Math.max(G.day-n,0));return a/b-1}
+function mktView(){
+  const N=D.P.N225,i=G.day;
+  let codes=D.codes.filter(c=>listed(c));
+  const s=UI.sort;
+  if(s==='up')codes.sort((a,b)=>chgOf(b)-chgOf(a));else if(s==='dn')codes.sort((a,b)=>chgOf(a)-chgOf(b));
+  else if(s==='m1')codes.sort((a,b)=>chgOf(b,21)-chgOf(a,21));else if(s==='yld')codes.sort((a,b)=>yld(b)-yld(a));
+  else if(s==='sec')codes.sort((a,b)=>META[a][1].localeCompare(META[b][1])||a.localeCompare(b));
+  else if(G.set.blind)codes.sort((a,b)=>G.alias[a].length-G.alias[b].length||G.alias[a].localeCompare(G.alias[b]));
+  let h=`<div class="idx" onclick="openDetail('N225')"><div><div class="sub" style="font-size:12px">${G.set.blind?'市場平均（指数）':'日経平均株価'}</div><b class="num" style="font-size:18px">${fmt(N[i],2)}</b></div><div class="num ${cls(N[i]-N[i-1])}" style="text-align:right"><b>${pct(N[i]/N[i-1]-1)}</b><br><small>${(N[i]-N[i-1]>0?'+':'')+fmt(N[i]-N[i-1],2)}</small></div></div>
+  <div class="sortbar">${[['code',G.set.blind?'名前順':'コード順'],['up','値上がり'],['dn','値下がり'],['m1','1ヶ月騰落'],['yld','配当利回り'],['sec','業種']].map(([k,n])=>`<button class="${s===k?'on':''}" onclick="UI.sort='${k}';renderMain()">${n}</button>`).join('')}</div><div class="list">`;
+  for(const c of codes){
+    const p=px(c),r=s==='m1'?chgOf(c,21):chgOf(c),pos=G.pos[c];
+    const extra=s==='yld'?`<small class="sub">利回り ${(yld(c)*100).toFixed(2)}%</small>`:`<span class="chg num ${cls(r)}">${pct(r)}</span>`;
+    h+=`<div class="it" onclick="openDetail('${c}')"><div class="nm"><b>${esc(nameOf(c))}${pos?`<span class="badge ${pos.q<0?'s':''}">${pos.q<0?'売':'保有'}</span>`:''}</b><small>${esc(codeLabel(c))}</small></div><div class="px num"><b>${pxf(p)}</b>${extra}</div></div>`;
+  }
+  return h+'</div>';
+}
+function yld(c,i=G.day){let s=0;const dv=D.DIV[c];for(const k in dv){const j=+k;if(j<=i&&j>i-250)s+=dv[k]}return s/px(c,i)}
+function pfView(){
+  const eq=equity(),lv=longVal(),sv=shortVal();
+  let h=`<div class="card"><div class="legend"><span><i style="background:var(--acc)"></i>あなたの資産</span><span><i style="background:#58a6ff"></i>${G.set.blind?'市場平均':'日経平均'}</span></div><canvas id="pfc"></canvas></div>
+  <div class="card kv num"><div><span>総資産</span><b>${yen(eq)}</b></div><div><span>現金</span><b>${yen(G.cash)}</b></div>
+  <div><span>株式（買い）</span><b>${yen(lv)}</b></div><div><span>空売り建玉</span><b>${yen(sv)}</b></div>
+  <div><span>買付余力</span><b>${yen(buyPower())}</b></div><div><span>信用余力</span><b>${G.set.short?yen(shortRoom()):'—'}</b></div>
+  <div><span>確定損益</span><b class="${cls(G.realized)}">${yen(G.realized)}</b></div><div><span>受取配当</span><b class="${cls(G.divs)}">${yen(G.divs)}</b></div>
+  <div><span>手数料・貸株料</span><b>${yen(G.fees)}</b></div><div><span>取引回数</span><b>${G.trades.length}回</b></div></div>`;
+  const cs=Object.keys(G.pos);
+  if(!cs.length)return h+`<p class="sub" style="text-align:center;padding:20px">保有銘柄はありません。<br>「銘柄」タブから銘柄を選んで買ってみましょう。</p>`;
+  h+='<div class="list">';
+  cs.sort((a,b)=>Math.abs(G.pos[b].q*px(b))-Math.abs(G.pos[a].q*px(a)));
+  for(const c of cs){const p=G.pos[c],v=p.q*px(c),pl=(px(c)-p.cost)*p.q,r=(px(c)/p.cost-1)*(p.q<0?-1:1);
+    h+=`<div class="it" onclick="openDetail('${c}')"><div class="nm"><b>${esc(nameOf(c))}<span class="badge ${p.q<0?'s':''}">${p.q<0?'空売り':'買い'}</span></b><small class="num">${fmt(Math.abs(p.q))}株 ・ 平均 ${pxf(p.cost)} ・ ${(Math.abs(v)/eq*100).toFixed(1)}%</small></div><div class="px num"><b class="${cls(pl)}">${pl>0?'+':''}${yen(pl)}</b><span class="chg ${cls(r)}">${pct(r)}</span></div></div>`}
+  return h+'</div>';
+}
+function drawPf(){
+  const cv=$('pfc');if(!cv)return;
+  const H=G.hist,eqA=H.map(h=>h[1]/G.init*100-100),bA=H.map(h=>bench(h[0])*100);
+  drawChart(cv,{h:180,i0:0,i1:Math.max(1,H.length-1),lines:[{v:bA,color:'#58a6ff',w:1.3,label:G.set.blind?'市場':'日経'},{v:eqA,color:'#f0b429',w:2,label:'資産',fill:'rgba(240,180,41,.18)'}],ref:0,xf:k=>H[Math.min(k,H.length-1)]?dateLabel(H[Math.min(k,H.length-1)][0]):'',yf:v=>(v>0?'+':'')+v.toFixed(1)+'%'});
+}
+function newsView(){
+  if(G.set.blind)return `<p class="sub" style="padding:20px;text-align:center">ブラインドモードではニュースは表示されません。</p>`+G.news.filter(n=>n.me).slice(0,80).map(n=>`<div class="news"><div class="n ${n.big?'big':''}"><small>${dateLabel(n.i)}</small>${esc(n.t)}</div></div>`).join('');
+  if(!G.news.length)return `<p class="sub" style="padding:20px;text-align:center">まだニュースはありません。</p>`;
+  return '<div class="news">'+G.news.slice(0,150).map(n=>`<div class="n ${n.big?'big':''}"><small>${D.dates[n.i]}</small>${esc(n.t)}</div>`).join('')+'</div>';
+}
+const SIDE={buy:['買い','b'],sell:['売却','s'],short:['空売り','x'],cover:['返済買い','x']};
+function logView(){
+  if(!G.trades.length)return `<p class="sub" style="padding:20px;text-align:center">まだ取引はありません。</p>`;
+  return `<table class="tr num">${G.trades.slice(0,200).map(t=>`<tr><td class="sub">${dateLabel(t.i)}</td><td>${esc(nameOf(t.c))}</td><td class="${t.side==='buy'||t.side==='cover'?'up':'dn'}">${SIDE[t.side][0]}${t.forced?'(強制)':''}</td><td style="text-align:right">${fmt(t.q)}株<br><span class="sub">@${pxf(t.p)}</span></td></tr>`).join('')}</table>`;
+}
+
+// ---------- 銘柄詳細 & 売買 ----------
+function openDetail(c){UI.detail=c;const p=G.pos[c];UI.side=p&&p.q<0?'cover':'buy';UI.qty=null;renderDetail();}
+const RANGES=[['1M',21],['3M',63],['6M',125],['1Y',245],['3Y',735],['ALL',1e9]];
+function renderDetail(){
+  const c=UI.detail;if(!c)return;
+  const P=D.P[c],i=G.day,p=P[i],pr=P[i-1],isIdx=c==='N225';
+  const i0=Math.max(firstFinite(P,0,i,0),i-RANGES.find(r=>r[0]===UI.range)[1]);
+  const w52=P.slice(Math.max(0,i-245),i+1).filter(isFinite);
+  const pos=G.pos[c];
+  let h=`<div class="grab"></div><div class="row"><div class="grow"><h2>${esc(nameOf(c))}</h2><div class="sub" style="font-size:12px">${esc(isIdx?(G.set.blind?'指数':'指数（売買不可）'):codeLabel(c))}</div></div><button onclick="closeSheet()">✕</button></div>
+  <div class="row" style="align-items:baseline;margin-top:6px"><b class="num" style="font-size:28px">${isIdx?fmt(p,2):pxf(p)}</b><span class="num ${cls(p-pr)}" style="margin-left:8px">${(p-pr>0?'+':'')+fmt(p-pr,isIdx?2:1)} (${pct(p/pr-1)})</span></div>
+  <div class="rng">${RANGES.map(([k])=>`<button class="${UI.range===k?'on':''}" onclick="UI.range='${k}';renderDetail()">${k}</button>`).join('')}</div>
+  <canvas id="dc"></canvas>
+  <div class="legend"><span><i style="background:#e6edf3"></i>終値</span><span><i style="background:#f0b429"></i>25日線</span><span><i style="background:#b083f0"></i>75日線</span>${pos?'<span><i style="background:#f0b429;height:1px"></i>平均取得</span>':''}</div>
+  <div class="kv num" style="margin-top:6px"><div><span>52週高値</span><b>${pxf(Math.max(...w52))}</b></div><div><span>52週安値</span><b>${pxf(Math.min(...w52))}</b></div>
+  <div><span>1ヶ月</span><b class="${cls(p/P[Math.max(0,i-21)]-1)}">${pct(p/P[Math.max(0,i-21)]-1,1)}</b></div><div><span>1年</span><b class="${cls(p/P[Math.max(0,i-245)]-1)}">${pct(p/P[Math.max(0,i-245)]-1,1)}</b></div>
+  ${isIdx?'':`<div><span>配当利回り</span><b>${(yld(c)*100).toFixed(2)}%</b></div><div><span>最低購入額</span><b>${yen(p*G.set.unit)}</b></div>`}</div>`;
+  if(!isIdx){
+    if(pos){const pl=(p-pos.cost)*pos.q;h+=`<div class="card kv num" style="margin-top:10px"><div><span>${pos.q<0?'空売り':'保有'}</span><b>${fmt(Math.abs(pos.q))}株</b></div><div><span>平均${pos.q<0?'売建':'取得'}</span><b>${pxf(pos.cost)}</b></div><div><span>評価額</span><b>${yen(Math.abs(pos.q*p))}</b></div><div><span>評価損益</span><b class="${cls(pl)}">${yen(pl)}</b></div></div>`}
+    const sides=['buy','sell'];if(G.set.short)sides.push('short','cover');
+    const sd=UI.side,u=G.set.unit;
+    const maxQ=maxQty(c,sd);if(UI.qty==null)UI.qty=Math.min(u,maxQ)||u;
+    const q=UI.qty,amt=q*p,fee=G.set.fee?Math.round(amt*FEE):0;
+    h+=`<div class="trade"><div class="seg">${sides.map(s=>`<button class="${sd===s?'on '+SIDE[s][1]:''}" onclick="UI.side='${s}';UI.qty=null;renderDetail()">${SIDE[s][0]}</button>`).join('')}</div>
+    <div class="qty"><button onclick="setQ(-${u*10})">-${u*10}</button><button onclick="setQ(-${u})">-${u}</button><input id="qin" class="num" inputmode="numeric" value="${q}" onchange="UI.qty=Math.max(0,Math.round((+this.value||0)/${u})*${u});renderDetail()"><button onclick="setQ(${u})">+${u}</button><button onclick="setQ(${u*10})">+${u*10}</button></div>
+    <div class="row" style="font-size:13px"><span class="sub grow">約定金額（終値） ${yen(amt)}${fee?` ＋手数料 ${yen(fee)}`:''}</span><button style="padding:6px 10px;font-size:12px" onclick="UI.qty=${maxQ};renderDetail()">最大 ${fmt(maxQ)}株</button></div>
+    <button class="go ${SIDE[sd][1]}" ${q>0&&q<=maxQ?'':'disabled'} onclick="execTrade()">${SIDE[sd][0]}注文（${fmt(q)}株）</button>
+    <div class="note" style="margin-top:6px">${sd==='buy'?`買付余力 ${yen(buyPower())}`:sd==='short'?`信用余力 ${yen(shortRoom())}（総資産の${SHORT_LEV}倍まで・貸株料 年1.1%）`:`${sd==='sell'?'保有':'空売り'} ${fmt(pos?Math.abs(pos.q):0)}株`}</div></div>`;
+  }
+  openSheet(h);
+  const lines=[{v:P,color:'#e6edf3',w:1.6,label:'終値'}];
+  if(i-i0<=800){lines.push({v:sma(P,25,i0,i),color:'#f0b429',w:1.1,label:'25日'});lines.push({v:sma(P,75,i0,i),color:'#b083f0',w:1.1,label:'75日'})}
+  const marks=G.trades.filter(t=>t.c===c).map(t=>({i:t.i,c:t.side==='buy'||t.side==='cover'?'#ff5a5f':'#2fbf71',up:t.side==='buy'||t.side==='cover'}));
+  drawChart($('dc'),{h:210,i0,i1:i,lines,marks,ref:pos?pos.cost:null,xf:dateLabel,yf:v=>isFinite(v)?(v>=1e4?fmt(v):v>=100?fmt(v):v.toFixed(1)):'—'});
+}
+function maxQty(c,sd){
+  const p=px(c),u=G.set.unit,pos=G.pos[c],f=G.set.fee?1+FEE:1;
+  if(sd==='buy')return pos&&pos.q<0?0:Math.floor(buyPower()/(p*f)/u)*u;
+  if(sd==='sell')return pos&&pos.q>0?pos.q:0;
+  if(sd==='short')return pos&&pos.q>0?0:Math.floor(shortRoom()/p/u)*u;
+  if(sd==='cover')return pos&&pos.q<0?-pos.q:0;
+  return 0;
+}
+function setQ(d){UI.qty=Math.max(0,(UI.qty||0)+d);renderDetail()}
+function execTrade(){
+  const c=UI.detail,err=doTrade(c,UI.side,UI.qty);
+  if(err){toast('⚠️ '+err);return}
+  toast(`✅ ${nameOf(c)} ${fmt(UI.qty)}株 ${SIDE[UI.side][0]}（@${pxf(px(c))}）`);
+  UI.qty=null;if(!G.pos[c]&&(UI.side==='sell'||UI.side==='cover'))UI.side='buy';
+  renderDetail();renderHdr();renderMain();
+}
+function openSheet(h){const s=$('sheet');const keep=!s.classList.contains('hide')?$('sheetIn').scrollTop:0;$('sheetIn').innerHTML=h;s.classList.remove('hide');$('sheetIn').scrollTop=keep;document.body.style.overflow='hidden'}
+function closeSheet(){$('sheet').classList.add('hide');UI.detail=null;document.body.style.overflow=''}
+$('sheet').addEventListener('click',e=>{if(e.target.id==='sheet')closeSheet()});
+
+// ---------- 時間を進める ----------
+function adv(n){
+  let ev=null,msg=null;
+  for(let k=0;k<n;k++){const r=stepDay();if(!r)break;if(r.ev)ev=r.ev;if(r.msg)msg=r.msg;if(UI.play&&((r.ev&&r.ev.big)||r.msg))break}
+  saveGame();
+  if(msg){toast(msg,4500);stopPlay()}
+  else if(ev){toast('📰 '+esc(ev.t),ev.big?4500:2600);if(ev.big&&UI.play)stopPlay()}
+  if(G.day>=G.end)stopPlay();
+  renderHdr();renderCtl();if(UI.tab!=='mkt'||!UI.play||G.day%2===0)renderMain();
+  if(UI.detail)renderDetail();
+}
+function togglePlay(){if(UI.play)stopPlay();else{UI.play=1;UI.timer=setInterval(()=>adv(1),UI.speed||350);renderCtl()}}
+function stopPlay(){UI.play=0;clearInterval(UI.timer);if(G&&$('ctl'))renderCtl()}
+function menuSheet(){
+  stopPlay();
+  const live=G.mode==='live';
+  openSheet(`<div class="grab"></div><h2>メニュー</h2>
+  ${live?'':`<div class="opt"><span>自動再生の速さ</span><div class="seg" id="spd">${[[700,'ゆっくり'],[350,'普通'],[120,'速い'],[30,'爆速']].map(([v,t])=>`<button class="${(UI.speed||350)===v?'on':''}" data-v="${v}">${t}</button>`).join('')}</div></div>`}
+  <button class="go" onclick="closeSheet();showHelp()">遊び方</button>
+  ${live?`<button class="go" onclick="if(confirm('リアル口座を解約して最初からやり直しますか？')){LS.del('kabu_live');closeSheet();renderMenu()}">口座をリセット</button>`:`<button class="go" onclick="if(confirm('ここで終了して結果を見ますか？')){closeSheet();finish()}">ここで終了して結果を見る</button>`}
+  <button class="go" onclick="closeSheet();saveGame();renderMenu()">メニューに戻る${live?'':'（自動保存）'}</button>`);
+  const sp=$('spd');if(sp)sp.onclick=e=>{const b=e.target.closest('button');if(!b)return;UI.speed=+b.dataset.v;sp.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b))};
+}
+
+// ---------- 結果 ----------
+function stats(){
+  const eq=equity(),ret=eq/G.init-1,b=bench(),ex=ret-b;
+  let pk=0,mdd=0;for(const [,v] of G.hist){if(v>pk)pk=v;mdd=Math.max(mdd,1-v/pk)}
+  const rank=ex>=0.5?'SS':ex>=0.25?'S':ex>=0.1?'A':ex>=0?'B':ex>=-0.1?'C':'D';
+  return {eq,ret,b,ex,mdd,rank};
+}
+const RANK_C={SS:'#ff5af0',S:'#f0b429',A:'#ff5a5f',B:'#58a6ff',C:'#8b98a5',D:'#6e7681'};
+const RANK_T={SS:'伝説の相場師',S:'兜町の勝負師',A:'市場に勝った投資家',B:'インデックス並み',C:'もう一歩',D:'修行が必要'};
+function finish(){
+  stopPlay();const s=stats();
+  if(!G.done){
+    G.done=1;saveGame();
+    const rec=LS.get('kabu_rec',{});const r=rec[G.scn];if(!r||s.ret>r.ret)rec[G.scn]={ret:s.ret,ex:s.ex,rank:s.rank,date:new Date().toISOString().slice(0,10)};LS.set('kabu_rec',rec);
+    const hs=LS.get('kabu_hist',[]);hs.unshift({scn:G.scnName,from:D.dates[G.start],to:D.dates[G.day],ret:s.ret,b:s.b,rank:s.rank,blind:G.set.blind,at:new Date().toISOString().slice(0,10)});LS.set('kabu_hist',hs.slice(0,30));
+  }
+  // 損益の大きかった取引
+  const per={};for(const t of G.trades)per[t.c]=1;
+  const reveal=G.set.blind?`<div class="card"><b>ブラインドの答え合わせ</b><p class="sub" style="font-size:12.5px;margin:4px 0">期間：${D.dates[G.start]} 〜 ${D.dates[G.day]}</p>${Object.keys(per).map(c=>`<div class="sub" style="font-size:13px">銘柄${G.alias[c]} ＝ <b style="color:var(--tx)">${META[c][0]}</b>（${c}）</div>`).join('')||'<span class="sub">取引なし</span>'}</div>`:'';
+  openSheet(`<div class="grab"></div><h2 style="text-align:center">🏁 ${esc(G.scnName)} 終了</h2>
+  <div class="rank" style="color:${RANK_C[s.rank]}">${s.rank}</div><div style="text-align:center;font-weight:700">${RANK_T[s.rank]}</div>
+  <div class="big-n num ${cls(s.ret)}">${pct(s.ret,1)}</div><div class="sub" style="text-align:center">${yen(G.init)} → <b style="color:var(--tx)">${yen(s.eq)}</b></div>
+  <div class="card" style="margin-top:12px"><div class="legend"><span><i style="background:var(--acc)"></i>あなた</span><span><i style="background:#58a6ff"></i>日経平均</span></div><canvas id="rc"></canvas></div>
+  <div class="card kv num"><div><span>日経平均</span><b class="${cls(s.b)}">${pct(s.b,1)}</b></div><div><span>超過リターン</span><b class="${cls(s.ex)}">${pct(s.ex,1)}</b></div>
+  <div><span>最大下落率</span><b>${pct(-s.mdd,1)}</b></div><div><span>取引回数</span><b>${G.trades.length}回</b></div>
+  <div><span>受取配当</span><b>${yen(G.divs)}</b></div><div><span>手数料等</span><b>${yen(G.fees)}</b></div></div>
+  ${reveal}
+  <button class="go" style="background:var(--acc);color:#111" onclick="shareRes()">結果をコピー</button>
+  <button class="go" onclick="closeSheet();renderMenu()">メニューへ</button>`);
+  const H=G.hist;drawChart($('rc'),{h:170,i0:0,i1:Math.max(1,H.length-1),lines:[{v:H.map(h=>bench(h[0])*100),color:'#58a6ff',w:1.3,label:'日経'},{v:H.map(h=>h[1]/G.init*100-100),color:'#f0b429',w:2,label:'資産',fill:'rgba(240,180,41,.18)'}],ref:0,xf:k=>H[Math.min(k,H.length-1)]?D.dates[H[Math.min(k,H.length-1)][0]]:'',yf:v=>(v>0?'+':'')+v.toFixed(0)+'%'});
+}
+function shareRes(){const s=stats();const t=`兜町トレーダー「${G.scnName}」${D.dates[G.start]}〜${D.dates[G.day]}\nランク${s.rank} 運用成績 ${pct(s.ret,1)}（日経平均 ${pct(s.b,1)}）\n${location.href.split('?')[0]}`;
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('コピーしました')).catch(()=>prompt('コピーしてください',t))}
+function showRecords(){
+  const hs=LS.get('kabu_hist',[]),rec=LS.get('kabu_rec',{});
+  openSheet(`<div class="grab"></div><div class="row"><h2 class="grow">成績</h2><button onclick="closeSheet()">✕</button></div>
+  <div class="sec-t">シナリオ別ベスト</div>${SCN.map(s=>{const r=rec[s.id];return `<div class="opt"><span>${s.name}</span><b class="num">${r?`<span style="color:${RANK_C[r.rank]}">${r.rank}</span> <span class="${cls(r.ret)}">${pct(r.ret,1)}</span>`:'<span class="sub">—</span>'}</b></div>`}).join('')}
+  <div class="sec-t">最近のプレイ</div>${hs.length?`<table class="tr num">${hs.map(h=>`<tr><td>${esc(h.scn)}${h.blind?' 🙈':''}<br><span class="sub">${h.from}〜${h.to}</span></td><td style="color:${RANK_C[h.rank]}">${h.rank}</td><td class="${cls(h.ret)}" style="text-align:right">${pct(h.ret,1)}<br><span class="sub">日経 ${pct(h.b,1)}</span></td></tr>`).join('')}</table>`:'<p class="sub">まだ記録がありません</p>'}`);
+}
+function showHelp(){
+  openSheet(`<div class="grab"></div><div class="row"><h2 class="grow">遊び方</h2><button onclick="closeSheet()">✕</button></div><div class="help">
+  <p>📈 <b>本物の株価</b>：東証に上場する代表的な${D.codes.length}銘柄と日経平均株価の、2000年1月から${D.dates[D.last]}までの実際の終値（株式分割を調整済み）を使っています。</p>
+  <p>⏳ <b>過去の相場に挑戦</b>：シナリオを選ぶと、その開始日に戻ります。見えるのはその日までの値動きだけ。「+1日」「+1週」「+1月」や自動再生で時間を進め、期間終了時の資産で採点します。</p>
+  <p>💴 <b>売買</b>：その日の終値で約定します。初期設定は100株単位・手数料0.1%。実際の配当も権利落ち日に受け取れます。</p>
+  <p>🔻 <b>空売り</b>：値下がりで利益を出す信用売り。総資産の2倍まで建てられ、貸株料（年1.1%）がかかります。保証金率が30%を切ると強制決済されます。</p>
+  <p>🏆 <b>ランク</b>：日経平均に対する超過リターンで決まります（SS: +50pt以上、S: +25pt、A: +10pt、B: 0pt以上、C: -10pt以上、D）。</p>
+  <p>📡 <b>リアル口座</b>：最新の終値から運用を始め、新しい営業日のデータが届くたびに資産が本物の相場と一緒に動きます。じっくり長期投資を試すのに。</p>
+  <p>🙈 <b>ブラインド</b>：銘柄名・日付・ニュースを隠します。結末を知っている相場でも、純粋に値動きだけで勝負できます。</p>
+  <p class="note">ゲーム内の取引は仮想のもので、投資助言ではありません。株価データは Yahoo Finance から取得した日次終値です。</p></div>`);
+}
+
+// ---------- 最新データの取得（公開版：data.json を毎営業日自動更新） ----------
+async function checkUpdate(manual){
+  if(location.protocol==='file:'){if(manual)toast(`内蔵データ：${D.R.last} 終値まで（公開版では毎営業日自動更新）`);return false}
+  try{
+    const r=await fetch('data.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw 0;
+    const R=await r.json();
+    if(R.last>D.R.last){D=decode(R);if(manual||G)toast(`📡 最新データ（${R.last} 終値）を読み込みました`);
+      if(G&&G.mode==='live'){openLive()}else if(G&&!$('game').classList.contains('hide')){stopPlay();saveGame();G=loadGame('kabu_scn');render()}else if(!G||$('game').classList.contains('hide'))renderMenu();return true}
+    if(manual)toast(`データは最新です（${D.R.last} 終値）。毎営業日の夕方に更新されます`);
+  }catch(e){if(manual)toast(`最新データを取得できませんでした（内蔵データ：${D.R.last} 終値まで）`)}
+  return false;
+}
+window.addEventListener('resize',()=>{if(UI.detail)renderDetail();else if(G&&UI.tab==='pf')drawPf()});
+// 起動
+D=decode(JSON.parse($('pricedata').textContent));
+renderMenu();
+checkUpdate(false);
+window.__K={get G(){return G},get D(){return D},UI,adv,doTrade,newGame,SCN,finish,stats,equity,openLive,newLive};
+</script>
+</body>
+</html>
