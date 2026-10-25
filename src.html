@@ -174,6 +174,15 @@ table.tr td{padding:9px 6px;border-bottom:1px solid var(--line)}
 .mini-board::-webkit-scrollbar{display:none}
 .mini-board span{flex:none;font-size:11.5px;padding:4px 9px;border-radius:10px;background:var(--card);border:1px solid var(--line);color:var(--sub)}
 .mini-board span.me{border-color:var(--acc);color:var(--tx)}
+
+.search{display:flex;gap:8px;margin-bottom:10px}
+.search input{flex:1;min-width:0}
+.search select{flex:0 0 38%;min-width:0}
+.cnt{font-size:11.5px;margin:0 4px 6px}
+.seg.scope button.on{background:var(--tx);color:#0a0a14}
+.loading{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(7,9,15,.72);backdrop-filter:blur(6px);color:var(--sub);font-size:14px}
+.spin{width:38px;height:38px;border-radius:50%;border:3px solid var(--line2);border-top-color:var(--acc2);animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -190,7 +199,7 @@ table.tr td{padding:9px 6px;border-bottom:1px solid var(--line)}
 <script>
 'use strict';
 // ---------- 銘柄マスタ ----------
-const META={
+const LEGACY_META={
  N225:['日経平均株価','指数'],
  '1306':['TOPIX連動型ETF','ETF'],
  '7203':['トヨタ自動車','輸送用機器'],'6758':['ソニーグループ','電気機器'],'9984':['ソフトバンクグループ','情報・通信'],
@@ -269,31 +278,67 @@ const SCN=[
  {id:'free',name:'フリー',d:'開始日と期間を自分で決める。',free:1}
 ];
 // ---------- データ ----------
-let D=null; // decoded
-function decode(R){
-  const dates=[R.d0];let t=Date.parse(R.d0+'T00:00:00Z');
-  for(let i=0;i<R.dd.length;i++){t+=(R.dd.charCodeAt(i)-48)*864e5;dates.push(new Date(t).toISOString().slice(0,10));}
-  const n=dates.length,P={},DIV={},codes=[];
-  for(const x of R.t){
-    const a=new Float64Array(n).fill(NaN);let p=0;const ds=x.p.split(',');
-    for(let i=0;i<ds.length;i++){if(ds[i])p+=parseInt(ds[i],16);a[x.s+i]=p/10;}
-    P[x.c]=a;const dv={};for(const [i,v] of x.dv)dv[x.s+i]=v/100;DIV[x.c]=dv;
-    if(x.c!=='N225'&&META[x.c])codes.push(x.c);
-  }
-  codes.sort((a,b)=>a.localeCompare(b));
-  const ev={};for(const e of EVENTS){const i=idxOf(dates,e[0]);if(i>=0&&dates[i]>=e[0])(ev[i]=ev[i]||[]).push({t:e[1],big:!!e[2]});}
-  // 日経平均の大きな動きと最高値を自動ニュース化
-  const N=P.N225;let hi=0;
-  for(let i=1;i<n;i++){
-    const r=N[i]/N[i-1]-1;
-    if(Math.abs(r)>=0.04&&!(ev[i]&&ev[i].length))(ev[i]=ev[i]||[]).push({t:`日経平均が${r>0?'急騰':'急落'}、前日比${r>0?'+':''}${(r*100).toFixed(1)}%（${fmt(N[i])}円）`,big:Math.abs(r)>=0.06,auto:1});
-    if(N[i]>hi&&i>2500&&N[i]>38915.87&&N[i-1]<=hi&&!ev[i])(ev[i]=ev[i]||[]).push({t:`日経平均が終値で史上最高値を更新（${fmt(N[i])}円）`,auto:1});
-    if(N[i]>hi)hi=N[i];
-    const k=10000;if(Math.floor(N[i]/k)>Math.floor(N[i-1]/k)&&N[i]>=40000&&!ev[i]&&Math.floor(N[i]/k)*k>maxBelow(N,i,k))(ev[i]=ev[i]||[]).push({t:`日経平均が初めて${Math.floor(N[i]/k)}万円台に乗せる`,auto:1});
-  }
-  return {R,dates,n,P,DIV,codes,ev,last:n-1};
+// M: 全期間の目次（暦・日経平均・銘柄一覧）、D: いま遊んでいる期間の株価、DL: 最新1年（メニュー用）
+let M=null,D=null,DL=null;const CH={};
+function decDelta(str,out,off){let p=0;const ds=str.split(',');for(let i=0;i<ds.length;i++){if(ds[i])p+=parseInt(ds[i],16);out[off+i]=p/10}return ds.length}
+function buildCal(d0,dd){const dates=[d0];let t=Date.parse(d0+'T00:00:00Z');for(let i=0;i<dd.length;i++){t+=(dd.charCodeAt(i)-48)*864e5;dates.push(new Date(t).toISOString().slice(0,10))}return dates}
+function initManifest(R){
+  const dates=buildCal(R.d0,R.dd),n=dates.length;
+  const n225=new Float64Array(n).fill(NaN);decDelta(R.n225,n225,0);
+  const meta={},codes=[],main=[];
+  for(const [c,nm,sec,f,mn] of R.meta){meta[c]={n:nm,s:sec||'その他',f,main:!!mn};codes.push(c);if(mn)main.push(c)}
+  for(const k in CH)delete CH[k];
+  M={v:2,dates,n,last:n-1,years:R.years,n225,meta,codes,main,ev:buildEvents(dates,n225)};
 }
-function maxBelow(N,i,k){let m=0;for(let j=0;j<i;j++)if(N[j]>m)m=N[j];return m}
+function initLegacy(R){ // 埋め込みの主要銘柄データ（オフライン用）
+  const dates=buildCal(R.d0,R.dd),n=dates.length;const meta={},codes=[],main=[];let n225;
+  const ch={i0:0,i1:n-1,P:{},DIV:{}};
+  for(const x of R.t){const a=new Float32Array(n).fill(NaN);decDelta(x.p,a,x.s);const dv={};for(const [i,v] of x.dv)dv[x.s+i]=v/100;
+    if(x.c==='N225'){n225=Float64Array.from(a);continue}
+    if(!LEGACY_META[x.c]||x.c==='1306')continue;ch.P[x.c]=a;ch.DIV[x.c]=dv;meta[x.c]={n:LEGACY_META[x.c][0],s:LEGACY_META[x.c][1],f:x.s,main:true};codes.push(x.c);main.push(x.c)}
+  codes.sort();
+  M={v:1,dates,n,last:n-1,years:{ALL:[0,n-1]},n225,meta,codes,main,ev:buildEvents(dates,n225)};CH.ALL=ch;
+}
+function buildEvents(dates,N){
+  const ev={};for(const e of EVENTS){const i=idxOf(dates,e[0]);if(i>=0&&dates[i]>=e[0])(ev[i]=ev[i]||[]).push({t:e[1],big:!!e[2]});}
+  let hi=0;
+  for(let i=1;i<dates.length;i++){
+    const r=N[i]/N[i-1]-1;
+    if(Math.abs(r)>=0.04&&!ev[i])ev[i]=[{t:`日経平均が${r>0?'急騰':'急落'}、前日比${r>0?'+':''}${(r*100).toFixed(1)}%（${fmt(N[i])}円）`,big:Math.abs(r)>=0.06}];
+    if(N[i]>hi&&N[i-1]<hi&&N[i]>38915.87&&!ev[i])ev[i]=[{t:`日経平均が終値で史上最高値を更新（${fmt(N[i])}円）`}];
+    if(N[i]>=40000&&Math.floor(N[i]/1e4)*1e4>hi&&!ev[i])ev[i]=[{t:`日経平均が初めて${Math.floor(N[i]/1e4)}万円台に乗せる`}];
+    if(N[i]>hi)hi=N[i];
+  }
+  const out={};for(const i in ev)out[dates[i]]=ev[i];return out;
+}
+async function fetchChunk(y){
+  if(CH[y])return CH[y];
+  const r=await fetch(`y/${y}.json`);if(!r.ok)throw new Error('株価データを読み込めませんでした');
+  const R=await r.json();const len=R.i1-R.i0+1;const ch={i0:R.i0,i1:R.i1,P:{},DIV:{}};
+  for(const [c,s,p] of R.t){const a=new Float32Array(len).fill(NaN);decDelta(p,a,s);ch.P[c]=a}
+  for(const c in R.dv){const o={};for(const [i,v] of R.dv[c])o[R.i0+i]=v/100;ch.DIV[c]=o}
+  return CH[y]=ch;
+}
+async function loadWindow(a,b){
+  a=Math.max(0,a);b=Math.min(M.last,b);
+  const ys=Object.keys(M.years).filter(y=>M.years[y][1]>=a&&M.years[y][0]<=b);
+  const need=ys.filter(y=>!CH[y]).length;if(need)loading(true,`株価データを読み込み中…（${need}年分）`);
+  let chs;try{chs=await Promise.all(ys.map(fetchChunk))}finally{loading(false)}
+  const n=b-a+1,P={},DIV={};
+  for(const ch of chs){
+    const lo=Math.max(a,ch.i0),hi=Math.min(b,ch.i1);
+    for(const c in ch.P){const arr=P[c]||(P[c]=new Float32Array(n).fill(NaN));const src=ch.P[c];for(let g=lo;g<=hi;g++)arr[g-a]=src[g-ch.i0]}
+    for(const c in ch.DIV){const o=DIV[c]||(DIV[c]={});for(const g in ch.DIV[c]){if(g>=a&&g<=b)o[g-a]=ch.DIV[c][g]}}
+  }
+  P.N225=M.n225.subarray(a,b+1);
+  const dates=M.dates.slice(a,b+1),codes=M.codes.filter(c=>P[c]&&!P[c].every(v=>v!==v));
+  for(const c of codes)if(!DIV[c])DIV[c]={};
+  const ev={};dates.forEach((d,i)=>{if(M.ev[d])ev[i]=M.ev[d]});
+  return {a,b,dates,n,P,DIV,codes,ev,last:n-1};
+}
+function loading(on,msg){let el=$('loading');if(!el){el=document.createElement('div');el.id='loading';el.className='loading hide';document.body.appendChild(el)}el.innerHTML=`<div class="spin"></div><div>${msg||'読み込み中…'}</div>`;el.classList.toggle('hide',!on)}
+async function useWindow(a,b){try{D=await loadWindow(a,b);return true}catch(e){toast('⚠️ '+e.message+'。通信状況を確認してください',4000);return false}}
+function gIdx(d){return idxOf(M.dates,d)}
 function idxOf(dates,s){let lo=0,hi=dates.length-1;if(s<=dates[0])return 0;if(s>dates[hi])return hi;while(lo<hi){const m=(lo+hi)>>1;if(dates[m]<s)lo=m+1;else hi=m;}return lo}
 // ---------- 表示ユーティリティ ----------
 const $=id=>document.getElementById(id);
@@ -307,15 +352,16 @@ function toast(msg,ms=2600){const t=$('toast');t.innerHTML=msg;t.classList.remov
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 const X_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const SEC_C={'輸送用機器':'#ff6b6b','電気機器':'#5b8cff','情報・通信':'#8b7bff','銀行':'#2bb3a3','小売':'#ff9f43','その他製品':'#e056fd','化学':'#26c6da','サービス':'#f368e0','卸売':'#feca57','医薬品':'#1dd1a1','機械':'#54a0ff','海運':'#0abde3','食料品':'#ff9ff3','精密機器':'#48dbfb','空運':'#00d2d3','陸運':'#10ac84','保険':'#5f27cd','鉄鋼':'#8395a7','ETF':'#c8d6e5','指数':'#c8d6e5'};
-function avatar(c){const sec=META[c][1],col=SEC_C[sec]||'#8395a7';const t=G&&G.set.blind?G.alias[c]:META[c][0].replace(/^(JR|NTT|KDDI|JT|HOYA)/,m=>m).slice(0,2);return `<div class="av" style="background:linear-gradient(135deg,${col},${col}88)">${esc(t)}</div>`}
+function secColor(sec){if(SEC_C[sec])return SEC_C[sec];let h=0;for(const ch of sec)h=(h*31+ch.charCodeAt(0))%360;return `hsl(${h},62%,58%)`}
+function avatar(c){const sec=M.meta[c].s,col=secColor(sec);const t=G&&G.set.blind?sec.slice(0,1):M.meta[c].n.replace(/^[（(].*?[)）]/,'').slice(0,2);return `<div class="av" style="background:linear-gradient(135deg,${col},color-mix(in srgb,${col} 45%,transparent))">${esc(t)}</div>`}
 
 // ---------- ゲーム状態 ----------
 const FEE=0.001, SHORT_RATE=0.011, MARGIN_MIN=0.3, SHORT_LEV=2;
 let G=null, UI={tab:'mkt',sort:'code',detail:null,range:'6M',side:'buy',play:0,timer:null};
 function px(c,i=G.day){return D.P[c]?D.P[c][i]:NaN}
 function listed(c,i=G.day){return isFinite(px(c,i))}
-function nameOf(c){if(G&&G.set.blind){if(c==='N225')return '市場平均';return '銘柄'+G.alias[c]}return META[c][0]}
-function codeLabel(c){return G&&G.set.blind?META[c][1]:c+' · '+META[c][1]}
+function nameOf(c){if(G&&G.set.blind){if(c==='N225')return '市場平均';return '銘柄'+G.alias[c]}return c==='N225'?'日経平均株価':M.meta[c].n}
+function codeLabel(c){return G&&G.set.blind?M.meta[c].s:c+' · '+M.meta[c].s}
 function dateLabel(i){return G&&G.set.blind?`Day ${i-G.start+1}`:D.dates[i]}
 function equity(i=G.day){let e=G.cash;for(const c in G.pos)e+=G.pos[c].q*px(c,i);return e}
 function longVal(){let v=0;for(const c in G.pos)if(G.pos[c].q>0)v+=G.pos[c].q*px(c);return v}
@@ -323,34 +369,40 @@ function shortVal(){let v=0;for(const c in G.pos)if(G.pos[c].q<0)v+=-G.pos[c].q*
 function buyPower(){return Math.max(0,G.cash-shortVal())}
 function shortRoom(){return Math.max(0,equity()*SHORT_LEV-shortVal())}
 function bench(i=G.day){return D.P.N225[i]/D.P.N225[G.start]-1}
-function makeAlias(){const alias={};const L='ABCDEFGHIJKLMNOPQRSTUVWXYZ';const sh=D.codes.slice().sort(()=>Math.random()-.5);sh.forEach((c,k)=>alias[c]=k<26?L[k]:L[k-26]+L[k-26]);return alias}
+function makeAlias(seed){let x=seed>>>0||1;const rnd=()=>{x^=x<<13;x>>>=0;x^=x>>>17;x^=x<<5;x>>>=0;return x/4294967296};const sh=M.codes.slice();for(let i=sh.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[sh[i],sh[j]]=[sh[j],sh[i]]}const alias={};sh.forEach((c,k)=>alias[c]=String(k+1).padStart(4,'0'));return alias}
+const newSeed=()=>Math.floor(Math.random()*2**31)+1;const LOOKBACK=735;
 function scnRange(sc,set){
   let s,e;
-  if(sc.rel){e=D.last;s=Math.max(0,e-sc.rel)}
-  else if(sc.random){const len=set.len||sc.random;const lo=idxOf(D.dates,'2001-01-04');s=lo+Math.floor(Math.random()*(D.last-len-lo));e=s+len}
-  else if(sc.free){s=idxOf(D.dates,set.from);e=Math.min(D.last,s+set.len)}
-  else{s=idxOf(D.dates,sc.from);e=Math.min(D.last,idxOf(D.dates,sc.to))}
+  if(sc.rel){e=M.last;s=Math.max(0,e-sc.rel)}
+  else if(sc.random){const len=set.len||sc.random;const lo=gIdx('2001-01-04');s=lo+Math.floor(Math.random()*(M.last-len-lo));e=s+len}
+  else if(sc.free){s=gIdx(set.from);e=Math.min(M.last,s+set.len)}
+  else{s=gIdx(sc.from);e=Math.min(M.last,gIdx(sc.to))}
   return [s,e];
 }
 function blankGame(mode,scn,name,s,e,set,alias){
   return {mode,scn,scnName:name,start:s,end:e,day:s,cash:set.cap,init:set.cap,pos:{},hist:[[s,set.cap]],trades:[],news:[],set,alias:alias||{},divs:0,fees:0,realized:0};
 }
-function newGame(sc,set){
-  const [s,e]=scnRange(sc,set);
-  G=blankGame('scn',sc.id,sc.name,s,e,set,makeAlias());
-  pushNews(s);saveGame();
+async function newGame(sc,set){
+  const [gs,ge]=scnRange(sc,set);
+  if(!await useWindow(gs-LOOKBACK,ge))return false;
+  const s=gs-D.a,e=ge-D.a,seed=newSeed();
+  G=blankGame('scn',sc.id,sc.name,s,e,set,makeAlias(seed));G.aseed=seed;
+  pushNews(s);saveGame();return true;
 }
-function newLive(cap){
-  const s=D.last;G=blankGame('live','live','リアル口座',s,Infinity,{cap,fee:1,unit:100,short:1,blind:0},{});G.startDate=D.dates[s];saveGame();
+async function newLive(cap){
+  if(!await useWindow(M.last-LOOKBACK,M.last))return false;
+  const s=D.last;G=blankGame('live','live','リアル口座',s,Infinity,{cap,fee:1,unit:100,short:1,blind:0},{});G.startDate=D.dates[s];saveGame();return true;
 }
 function saveGame(){
   if(!G||G.mode==='pvp')return;
   const o=Object.assign({},G,{startDate:D.dates[G.start],dayDate:D.dates[G.day],endDate:isFinite(G.end)?D.dates[G.end]:null,hist:G.hist.map(h=>[D.dates[h[0]],h[1]]),trades:G.trades.map(t=>Object.assign({},t,{i:D.dates[t.i]})),news:G.news.map(n=>Object.assign({},n,{i:D.dates[n.i]}))});
+  if(o.aseed)delete o.alias;
   LS.set(G.mode==='live'?'kabu_live':'kabu_scn',o);
 }
 function loadGame(key){
   const o=LS.get(key,null);if(!o)return null;
   const f=d=>idxOf(D.dates,d);
+  if(o.aseed)o.alias=makeAlias(o.aseed);else o.alias=o.alias||{};
   o.start=f(o.startDate);o.day=f(o.dayDate);o.end=o.endDate?f(o.endDate):Infinity;
   o.hist=o.hist.map(h=>[f(h[0]),h[1]]);o.trades=o.trades.map(t=>Object.assign(t,{i:f(t.i)}));o.news=o.news.map(n=>Object.assign(n,{i:f(n.i)}));
   return o;
@@ -450,7 +502,7 @@ function drawChart(cv,o,hover){
 function spark(cv,arr,i0,i1){const up=arr[i1]>=arr[i0];drawChart(cv,{h:cv.clientHeight||26,i0,i1,lines:[{v:arr,color:up?'#ff4d6d':'#18d18c',w:1.5,fill:up?'rgba(255,77,109,.22)':'rgba(24,209,140,.2)'}],bare:1,padR:0,padB:0,xf:()=>''})}
 function firstFinite(v,a,b){for(let i=a;i<=b;i++)if(isFinite(v[i]))return i;return a}
 function sma(arr,n,i0,i1){const out=new Float64Array(arr.length).fill(NaN);for(let i=i0;i<=i1;i++){let s=0,k=0;for(let j=i-n+1;j<=i;j++){if(j>=0&&isFinite(arr[j])){s+=arr[j];k++}}if(k===n)out[i]=s/n}return out}
-function drawSparks(){document.querySelectorAll('canvas.sp').forEach(cv=>{const c=cv.dataset.c;const P=D.P[c];const i1=G?G.day:D.last;spark(cv,P,Math.max(firstFinite(P,0,i1),i1-21),i1)})}
+function drawSparks(){document.querySelectorAll('canvas.sp').forEach(cv=>{const c=cv.dataset.c;const DD=G?D:DL;const P=DD.P[c];const i1=G?G.day:DD.last;spark(cv,P,Math.max(firstFinite(P,0,i1),i1-21),i1)})}
 
 // ---------- シート ----------
 function openSheet(body,title,sub,cls_){
@@ -476,25 +528,25 @@ const LOGO='<svg viewBox="0 0 24 24" fill="none" stroke="#0a0a14" stroke-width="
 function renderMenu(){
   stopPlay();$('game').classList.add('hide');$('menu').classList.remove('hide');
   const rec=LS.get('kabu_rec',{}),save=LS.get('kabu_scn',null),live=LS.get('kabu_live',null);
-  const N=D.P.N225,L=D.last;
-  const tk=['N225',...D.codes].map(c=>{const a=D.P[c][L],b=D.P[c][L-1];return `<span style="color:#c9d1dc">${META[c][0]}</span> <b class="num ${cls(a-b)}">${pxf(a)} ${pct(a/b-1)}</b>`}).join('<span style="color:#2a3040">　•　</span>');
+  const N=M.n225,L=M.last;
+  const tk=['N225',...M.main.filter(c=>DL.P[c])].map(c=>{const a=DL.P[c][DL.last],b=DL.P[c][DL.last-1];return `<span style="color:#c9d1dc">${c==='N225'?'日経平均':M.meta[c].n}</span> <b class="num ${cls(a-b)}">${pxf(a)} ${pct(a/b-1)}</b>`}).join('<span style="color:#2a3040">　•　</span>');
   let h=`<div class="logo"><div class="mk">${LOGO}</div><div><h1>兜町<span>トレーダー</span></h1><p>実際の東証株価で遊ぶ投資シミュレーション</p></div></div>
   <div class="ticker"><div>${tk}</div></div>
-  <div class="glass hero"><div class="grow"><div class="lb">日経平均株価 ・ ${D.dates[L]} 終値</div><div class="v num">${fmt(N[L],2)}</div><span class="chg ${cls(N[L]-N[L-1])} num">${pct(N[L]/N[L-1]-1)}</span></div><canvas id="mN" style="width:48%;height:74px"></canvas></div>`;
+  <div class="glass hero"><div class="grow"><div class="lb">日経平均株価 ・ ${M.dates[L]} 終値</div><div class="v num">${fmt(N[L],2)}</div><span class="chg ${cls(N[L]-N[L-1])} num">${pct(N[L]/N[L-1]-1)}</span></div><canvas id="mN" style="width:48%;height:74px"></canvas></div>`;
   if(save&&!save.done)h+=`<div class="sec-t">続きから</div><button class="scn feat" onclick="resume()"><b>▶ ${esc(save.scnName)}</b><span class="r">${pct(save.hist[save.hist.length-1][1]/save.init-1,1)}</span><div class="d">${save.set.blind?'ブラインド':esc(save.dayDate)} 時点 ・ 総資産 ${yen(save.hist[save.hist.length-1][1])}</div></button>`;
   h+=`<div class="sec-t">オンライン</div><button class="scn vs" onclick="onlineSheet()"><b>⚔️ オンライン対戦</b><div class="d">ルームを作って友だちと同じ相場で資産を競う。時間は全員同時に進みます。</div></button>`;
   h+=`<div class="sec-t">最新相場で運用</div>`;
   if(live){const lg=loadGame('kabu_live');const eq=liveEquity(lg);h+=`<button class="scn feat" onclick="openLive()"><b>📡 リアル口座</b><span class="r">${pct(eq/lg.init-1)}</span><div class="d">${esc(lg.startDate)} 開設 ・ 総資産 ${yen(eq)}<br>最新の終値が反映されるたびに資産が動きます</div></button>`}
-  else h+=`<button class="scn feat" onclick="liveSetup()"><b>📡 リアル口座を開設</b><div class="d">${D.dates[L]} の終値からスタート。毎営業日の終値更新とともに、あなたのポートフォリオも本物の相場と一緒に動きます。</div></button>`;
+  else h+=`<button class="scn feat" onclick="liveSetup()"><b>📡 リアル口座を開設</b><div class="d">${M.dates[L]} の終値からスタート。毎営業日の終値更新とともに、あなたのポートフォリオも本物の相場と一緒に動きます。</div></button>`;
   h+=`<div class="sec-t">過去の相場に挑戦</div>`;
   for(const s of SCN){const r=rec[s.id];h+=`<button class="scn" onclick="setup('${s.id}')"><b>${s.name}</b>${r?`<span class="r">${r.rank} ${pct(r.ret,1)}</span>`:''}<div class="d">${s.d}${s.from?`<br><span style="color:var(--mute)">${s.from} 〜 ${s.to}</span>`:''}</div></button>`}
   h+=`<div class="sec-t">その他</div><div class="row"><button class="grow" onclick="showHelp()">遊び方</button><button class="grow" onclick="showRecords()">成績</button></div>
-  <p class="note" style="margin-top:20px">株価：東京証券取引所 上場銘柄の日次終値（株式分割調整済み、Yahoo Finance 経由で取得）。2000年1月〜${D.dates[L]}。ゲーム内の取引はすべて仮想で、実際の売買は行われません。投資助言ではありません。</p>`;
+  <p class="note" style="margin-top:20px">株価：東京証券取引所 上場銘柄の日次終値（株式分割調整済み、Yahoo Finance 経由で取得）。2000年1月〜${M.dates[L]}（${M.v===2?'東証プライム全'+M.codes.length+'銘柄':'主要'+M.codes.length+'銘柄'}）。ゲーム内の取引はすべて仮想で、実際の売買は行われません。投資助言ではありません。</p>`;
   $('menu').innerHTML=h;
   drawChart($('mN'),{h:74,i0:L-245,i1:L,lines:[{v:N,color:N[L]>=N[L-245]?'#ff4d6d':'#18d18c',w:1.8,fill:N[L]>=N[L-245]?'rgba(255,77,109,.25)':'rgba(24,209,140,.22)'}],bare:1,padR:4,padB:4,dotEnd:1,xf:()=>''});
   window.scrollTo(0,0);
 }
-function liveEquity(lg){let e=lg.cash;for(const c in lg.pos)e+=lg.pos[c].q*D.P[c][D.last];return e}
+function liveEquity(lg){let e=lg.cash;for(const c in lg.pos)e+=lg.pos[c].q*(DL.P[c]?DL.P[c][DL.last]:lg.pos[c].cost);return e}
 function segOpt(S,k,label,vals){return `<div class="opt"><span>${label}</span><div class="seg" data-k="${k}">${vals.map(([v,t])=>`<button class="${S[k]==v?'on':''}" data-v="${v}">${t}</button>`).join('')}</div></div>`}
 function bindSegs(S,root,cb){root.querySelectorAll('.seg[data-k]').forEach(sg=>sg.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;sg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');S[sg.dataset.k]=isNaN(+b.dataset.v)?b.dataset.v:+b.dataset.v;cb&&cb(sg.dataset.k)}))}
 function setup(id){
@@ -502,7 +554,7 @@ function setup(id){
   if(LS.get('kabu_scn',null)&&!LS.get('kabu_scn').done&&!confirm('進行中のゲームは上書きされます。よろしいですか？'))return;
   const S=Object.assign({},last,{blind:id==='random'?last.blind:0,from:'2008-01-04',len:245});
   let h=`<p class="sub" style="font-size:13px;margin:0 0 6px;line-height:1.6">${sc.d}</p>`;
-  if(sc.free)h+=`<div class="opt"><span>開始日</span><input type="date" id="fFrom" value="${S.from}" min="${D.dates[0]}" max="${D.dates[D.last-20]}"></div>`+segOpt(S,'len','期間',[[60,'3ヶ月'],[125,'半年'],[245,'1年'],[735,'3年']]);
+  if(sc.free)h+=`<div class="opt"><span>開始日</span><input type="date" id="fFrom" value="${S.from}" min="${M.dates[0]}" max="${M.dates[M.last-20]}"></div>`+segOpt(S,'len','期間',[[60,'3ヶ月'],[125,'半年'],[245,'1年'],[735,'3年']]);
   h+=segOpt(S,'cap','初期資金',[[1000000,'100万'],[3000000,'300万'],[10000000,'1000万'],[100000000,'1億']])
    +segOpt(S,'unit','売買単位',[[100,'100株'],[1,'1株']])
    +segOpt(S,'fee','手数料',[[1,'0.1%'],[0,'無料']])
@@ -512,27 +564,29 @@ function setup(id){
    <button class="go pri" id="startBtn">スタート</button>`;
   openSheet(h,sc.name);
   bindSegs(S,$('sheetIn'));
-  $('startBtn').onclick=()=>{if(sc.free)S.from=$('fFrom').value||S.from;LS.set('kabu_set',{cap:S.cap,fee:S.fee,unit:S.unit,short:S.short,blind:S.blind});newGame(sc,S);closeSheet();startGame()};
+  $('startBtn').onclick=()=>{if(sc.free)S.from=$('fFrom').value||S.from;LS.set('kabu_set',{cap:S.cap,fee:S.fee,unit:S.unit,short:S.short,blind:S.blind});closeSheet();newGame(sc,S).then(ok=>{if(ok)startGame()})};
 }
 function liveSetup(){
   const S={cap:10000000};
-  openSheet(`<p class="sub" style="font-size:13px;line-height:1.65;margin-top:0">${D.dates[D.last]} の終値から運用を始めます。時間は自動では進まず、新しい営業日の終値データが届くたびに（毎営業日の夕方に自動更新）資産が動きます。配当も実際の権利落ち日に入金されます。</p>
+  openSheet(`<p class="sub" style="font-size:13px;line-height:1.65;margin-top:0">${M.dates[M.last]} の終値から運用を始めます。時間は自動では進まず、新しい営業日の終値データが届くたびに（毎営業日の夕方に自動更新）資産が動きます。配当も実際の権利落ち日に入金されます。</p>
   ${segOpt(S,'cap','初期資金',[[1000000,'100万'],[3000000,'300万'],[10000000,'1000万'],[100000000,'1億']])}
   <p class="note">売買単位100株・手数料0.1%・空売りあり。</p>
   <button class="go pri" id="lgo">開設する</button>`,'リアル口座を開設');
   bindSegs(S,$('sheetIn'));
-  $('lgo').onclick=()=>{newLive(S.cap);closeSheet();startGame()};
+  $('lgo').onclick=()=>{closeSheet();newLive(S.cap).then(ok=>{if(ok)startGame()})};
 }
-function openLive(){
+async function openLive(){
+  const sv=LS.get('kabu_live',null);if(!sv)return;
+  if(!await useWindow(Math.min(gIdx(sv.startDate),M.last-LOOKBACK),M.last))return;
   G=loadGame('kabu_live');
   const before=G.day;let n=0;G.end=D.last;
   while(G.day<D.last){stepDay();n++}
   G.end=Infinity;saveGame();startGame();
   if(n>0)toast(`📈 ${n}営業日分の新しい終値を反映しました（${D.dates[before]} → ${D.dates[D.last]}）`,4000);
 }
-function resume(){G=loadGame('kabu_scn');startGame()}
+async function resume(){const sv=LS.get('kabu_scn',null);if(!sv)return;if(!await useWindow(gIdx(sv.startDate)-LOOKBACK,gIdx(sv.endDate)))return;G=loadGame('kabu_scn');startGame()}
 function startGame(){
-  $('menu').classList.add('hide');$('game').classList.remove('hide');UI.tab='mkt';UI.detail=null;render();window.scrollTo(0,0);
+  $('menu').classList.add('hide');$('game').classList.remove('hide');UI.tab='mkt';UI.q='';UI.sec='';UI.limit=40;UI.sort='code';UI.scope=null;UI.detail=null;render();window.scrollTo(0,0);
 }
 
 // ---------- ゲーム画面 ----------
@@ -570,28 +624,45 @@ function renderMain(){
   if(t==='mkt')h+=mktView();else if(t==='pf')h+=pfView();else if(t==='news')h+=newsView();else if(t==='rank')h+=rankView();else h+=logView();
   $('main').innerHTML=h;
   if(t==='pf')drawPf();
-  if(t==='mkt'){drawSparks();const N=D.P.N225;const cv=$('idxSp');if(cv)spark(cv,N,Math.max(0,G.day-21),G.day)}
+  if(t==='mkt'){idxSpark();renderList()}
 }
 function setTab(k){UI.tab=k;renderMain();window.scrollTo(0,0)}
 function chgOf(c,n=1){const a=px(c),b=px(c,Math.max(G.day-n,0));return a/b-1}
+function idxInner(){const N=D.P.N225,i=G.day;return `<div class="grow"><div class="sub" style="font-size:11.5px">${G.set.blind?'市場平均（指数）':'日経平均株価'}</div><b class="num" style="font-size:20px">${fmt(N[i],2)}</b></div><canvas id="idxSp"></canvas><div class="num" style="text-align:right;min-width:70px"><span class="chg ${cls(N[i]-N[i-1])}">${pct(N[i]/N[i-1]-1)}</span><div class="sub" style="font-size:11px;margin-top:3px">${(N[i]-N[i-1]>0?'+':'')+fmt(N[i]-N[i-1],0)}</div></div>`}
+function idxSpark(){const cv=$('idxSp');if(cv)spark(cv,D.P.N225,Math.max(0,G.day-21),G.day)}
 function mktView(){
-  const N=D.P.N225,i=G.day;
+  if(!UI.scope)UI.scope=M.main.length<D.codes.length?'main':'all';
+  const secs=[...new Set(D.codes.map(c=>M.meta[c].s))].sort((a,b)=>a.localeCompare(b,'ja'));
+  const nAll=D.codes.filter(c=>listed(c)).length;
+  const scopes=[['main','主要銘柄'],['all',`全銘柄 ${nAll}`],['own','保有中']];if(M.main.length>=D.codes.length)scopes.shift();
+  return `<div class="glass idx" id="idxCard" onclick="openDetail('N225')">${idxInner()}</div>
+  <div class="seg scope" style="margin-bottom:10px">${scopes.map(([k,n])=>`<button class="${UI.scope===k?'on':''}" onclick="UI.scope='${k}';UI.limit=40;renderMain()">${n}</button>`).join('')}</div>
+  <div class="search"><input id="qIn" type="search" placeholder="${G.set.blind?'番号・業種で検索':'銘柄名・コードで検索'}" value="${esc(UI.q||'')}" oninput="UI.q=this.value;UI.limit=40;renderList()"><select onchange="UI.sec=this.value;UI.limit=40;renderList()"><option value="">全業種</option>${secs.map(x=>`<option ${UI.sec===x?'selected':''}>${esc(x)}</option>`).join('')}</select></div>
+  <div class="sortbar">${[['code',G.set.blind?'番号順':'コード順'],['up','値上がり'],['dn','値下がり'],['m1','1ヶ月上昇'],['m1d','1ヶ月下落'],['yld','配当利回り']].map(([k,n])=>`<button class="${UI.sort===k?'on':''}" onclick="UI.sort='${k}';UI.limit=40;renderMain()">${n}</button>`).join('')}</div>
+  <div id="mlist"></div>`;
+}
+function renderList(){
+  const el=$('mlist');if(!el)return;
   let codes=D.codes.filter(c=>listed(c));
+  if(UI.scope==='main')codes=codes.filter(c=>M.meta[c].main);else if(UI.scope==='own')codes=codes.filter(c=>G.pos[c]);
+  if(UI.sec)codes=codes.filter(c=>M.meta[c].s===UI.sec);
+  const q=(UI.q||'').trim().toLowerCase();
+  if(q)codes=codes.filter(c=>G.set.blind?(G.alias[c].includes(q)||M.meta[c].s.includes(q)):(c.includes(q)||M.meta[c].n.toLowerCase().includes(q)||M.meta[c].s.includes(q)));
   const s=UI.sort;
-  if(s==='up')codes.sort((a,b)=>chgOf(b)-chgOf(a));else if(s==='dn')codes.sort((a,b)=>chgOf(a)-chgOf(b));
-  else if(s==='m1')codes.sort((a,b)=>chgOf(b,21)-chgOf(a,21));else if(s==='yld')codes.sort((a,b)=>yld(b)-yld(a));
-  else if(s==='sec')codes.sort((a,b)=>META[a][1].localeCompare(META[b][1])||a.localeCompare(b));
-  else if(s==='own')codes=codes.filter(c=>G.pos[c]);
-  else if(G.set.blind)codes.sort((a,b)=>G.alias[a].length-G.alias[b].length||G.alias[a].localeCompare(G.alias[b]));
-  let h=`<div class="glass idx" onclick="openDetail('N225')"><div class="grow"><div class="sub" style="font-size:11.5px">${G.set.blind?'市場平均（指数）':'日経平均株価'}</div><b class="num" style="font-size:20px">${fmt(N[i],2)}</b></div><canvas id="idxSp"></canvas><div class="num" style="text-align:right;min-width:70px"><span class="chg ${cls(N[i]-N[i-1])}">${pct(N[i]/N[i-1]-1)}</span><div class="sub" style="font-size:11px;margin-top:3px">${(N[i]-N[i-1]>0?'+':'')+fmt(N[i]-N[i-1],0)}</div></div></div>
-  <div class="sortbar">${[['code',G.set.blind?'名前順':'コード順'],['own','保有中'],['up','値上がり'],['dn','値下がり'],['m1','1ヶ月'],['yld','配当利回り'],['sec','業種']].map(([k,n])=>`<button class="${s===k?'on':''}" onclick="UI.sort='${k}';renderMain()">${n}</button>`).join('')}</div><div class="list">`;
-  if(!codes.length)h+=`<p class="sub" style="text-align:center;padding:24px;margin:0">該当する銘柄はありません</p>`;
-  for(const c of codes){
-    const p=px(c),r=s==='m1'?chgOf(c,21):chgOf(c),pos=G.pos[c];
+  if(s==='up'||s==='dn'||s==='m1'||s==='m1d'){const n=s[0]==='m'?21:1,dir=(s==='dn'||s==='m1d')?1:-1;const k={};for(const c of codes)k[c]=chgOf(c,n);codes.sort((a,b)=>dir*(k[a]-k[b]))}
+  else if(s==='yld'){const k={};for(const c of codes)k[c]=yld(c);codes.sort((a,b)=>k[b]-k[a])}
+  else if(G.set.blind)codes.sort((a,b)=>G.alias[a].localeCompare(G.alias[b]));
+  const lim=UI.limit||40,tot=codes.length;
+  let h=`<div class="cnt sub">${tot}銘柄${tot>lim?` ・ 上位${lim}件を表示`:''}</div><div class="list">`;
+  if(!tot)h+=`<p class="sub" style="text-align:center;padding:24px;margin:0">該当する銘柄はありません</p>`;
+  for(const c of codes.slice(0,lim)){
+    const p=px(c),r=s[0]==='m'?chgOf(c,21):chgOf(c),pos=G.pos[c];
     const extra=s==='yld'?`<span class="chg">${(yld(c)*100).toFixed(2)}%</span>`:`<span class="chg num ${cls(r)}">${pct(r)}</span>`;
     h+=`<div class="it" onclick="openDetail('${c}')">${avatar(c)}<div class="nm"><b>${esc(nameOf(c))}${pos?`<span class="badge ${pos.q<0?'s':''}">${pos.q<0?'売建':'保有'}</span>`:''}</b><small>${esc(codeLabel(c))}</small></div><canvas class="sp" data-c="${c}"></canvas><div class="px num"><b>${pxf(p)}</b>${extra}</div></div>`;
   }
-  return h+'</div>';
+  h+='</div>';
+  if(tot>lim)h+=`<button class="go ghost" onclick="UI.limit+=60;renderList()">さらに表示（残り${tot-lim}銘柄）</button>`;
+  el.innerHTML=h;drawSparks();
 }
 function yld(c,i=G.day){let s=0;const dv=D.DIV[c];for(const k in dv){const j=+k;if(j<=i&&j>i-250)s+=dv[k]}return s/px(c,i)}
 function pfView(){
@@ -692,7 +763,7 @@ function adv(n){
   if(G.day>=G.end)stopPlay();
   refresh();
 }
-function refresh(){renderHdr();renderCtl();renderMain();if(UI.detail)renderDetail()}
+function refresh(){renderHdr();renderCtl();if(UI.tab==='mkt'&&$('mlist')){$('idxCard').innerHTML=idxInner();idxSpark();renderList()}else renderMain();if(UI.detail)renderDetail()}
 function togglePlay(){if(UI.play)stopPlay();else{UI.play=1;UI.timer=setInterval(()=>adv(1),UI.speed||350);renderCtl()}}
 function stopPlay(){UI.play=0;clearInterval(UI.timer);if(G&&G.mode!=='pvp'&&$('ctl')&&!$('game').classList.contains('hide'))renderCtl()}
 function menuSheet(){
@@ -725,7 +796,7 @@ function statsCard(s){return `<div class="card kv num"><div><span>日経平均</
   <div><span>受取配当</span><b>${yen(G.divs)}</b></div><div><span>手数料等</span><b>${yen(G.fees)}</b></div></div>`}
 function revealCard(){
   if(!G.set.blind)return '';const per={};for(const t of G.trades)per[t.c]=1;for(const c in G.pos)per[c]=1;
-  return `<div class="card"><b>ブラインドの答え合わせ</b><p class="sub" style="font-size:12.5px;margin:4px 0 6px">期間：${D.dates[G.start]} 〜 ${D.dates[G.day]}</p>${Object.keys(per).map(c=>`<div class="sub" style="font-size:13px;padding:2px 0">銘柄${G.alias[c]} ＝ <b style="color:var(--tx)">${META[c][0]}</b>（${c}）</div>`).join('')||'<span class="sub">取引なし</span>'}</div>`;
+  return `<div class="card"><b>ブラインドの答え合わせ</b><p class="sub" style="font-size:12.5px;margin:4px 0 6px">期間：${D.dates[G.start]} 〜 ${D.dates[G.day]}</p>${Object.keys(per).map(c=>`<div class="sub" style="font-size:13px;padding:2px 0">銘柄${G.alias[c]} ＝ <b style="color:var(--tx)">${M.meta[c].n}</b>（${c}）</div>`).join('')||'<span class="sub">取引なし</span>'}</div>`;
 }
 function finish(){
   stopPlay();const s=stats();
@@ -752,7 +823,7 @@ function showRecords(){
 }
 function showHelp(){
   openSheet(`<div class="help">
-  <p>📈 <b>本物の株価</b>：東証に上場する代表的な${D.codes.length}銘柄と日経平均株価の、2000年1月から${D.dates[D.last]}までの実際の終値（株式分割を調整済み）を使っています。</p>
+  <p>📈 <b>本物の株価</b>：${M.v===2?'東証プライム市場の全'+M.codes.length+'銘柄':'東証の代表的な'+M.codes.length+'銘柄'}と日経平均株価の、2000年1月から${M.dates[M.last]}までの実際の終値（株式分割を調整済み）を使っています。</p>
   <p>⏳ <b>過去の相場に挑戦</b>：シナリオを選ぶと、その開始日に戻ります。見えるのはその日までの値動きだけ。「+1日」「+1週」「+1月」や自動再生で時間を進め、期間終了時の資産で採点します。</p>
   <p>⚔️ <b>オンライン対戦</b>：ルームを作って6桁の番号か招待リンクを友だちに送ります。全員が同じ相場・同じ初期資金でスタートし、時間はホストの操作で全員同時に進みます。終了時の総資産で順位が決まります。</p>
   <p>💴 <b>売買</b>：その日の終値で約定します。初期設定は100株単位・手数料0.1%。実際の配当も権利落ち日に受け取れます。</p>
@@ -866,20 +937,23 @@ function hostStart(){
   const L=NET.lobby,sc=PVP_SCN.find(s=>s.id===L.scn);
   const set={cap:L.cap,fee:1,unit:L.unit,short:L.short,blind:L.blind,len:L.len};
   const [s,e]=scnRange(sc,set);
-  const cfg={name:L.blind?'オンライン対戦':`対戦：${sc.name}`,startDate:D.dates[s],endDate:D.dates[e],set,alias:makeAlias()};
+  const cfg={name:L.blind?'オンライン対戦':`対戦：${sc.name}`,startDate:M.dates[s],endDate:M.dates[e],set,seed:newSeed()};
   NET.started=true;NET.speed=L.speed;NET.cfg=cfg;
   broadcast({t:'start',cfg,speed:L.speed});
-  pvpBegin(cfg);
-  NET.paused=true;renderCtl();
+  NET.paused=true;
+  pvpBegin(cfg).then(()=>{if(G)renderCtl()});
   let n=3;toast(`⏳ ${n}`,900);const cd=setInterval(()=>{n--;if(n>0)toast(`⏳ ${n}`,900);else{clearInterval(cd);toast('🔔 取引開始！',1200);hostSetPause(false)}},1000);
 }
-function pvpBegin(cfg){
-  UI.onClose=null;closeSheet();stopPlay();
-  const s=idxOf(D.dates,cfg.startDate),e=Math.min(D.last,idxOf(D.dates,cfg.endDate));
-  G=blankGame('pvp','pvp',cfg.name,s,e,cfg.set,cfg.alias);
+async function pvpBegin(cfg){
+  UI.onClose=null;closeSheet();stopPlay();G=null;
+  const gs=gIdx(cfg.startDate),ge=gIdx(cfg.endDate);
+  if(!await useWindow(gs-LOOKBACK,ge)){return}
+  const s=gs-D.a,e=Math.min(D.last,ge-D.a);
+  G=blankGame('pvp','pvp',cfg.name,s,e,cfg.set,makeAlias(cfg.seed));
   for(const id in NET.players)NET.players[id].eq=G.init;
   NET.board=Object.values(NET.players).map(p=>({id:p.id,name:p.name,eq:G.init,on:true}));
   startGame();
+  if(NET.pendingDay)clientRecv(NET.pendingDay);
 }
 function hostSetPause(v){
   NET.paused=v;clearInterval(NET.timer);
@@ -890,6 +964,7 @@ function hostTogglePause(){hostSetPause(!NET.paused)}
 function hostSpeed(){const L=[2000,1000,500,250];NET.speed=L[(L.indexOf(NET.speed)+1)%L.length];hostSetPause(NET.paused)}
 function hostBoard(){NET.players[NET.myId].eq=equity();return Object.values(NET.players).map(p=>({id:p.id,name:p.name,eq:p.eq,on:p.on}))}
 function hostTick(){
+  if(!G)return;
   if(G.day>=G.end){clearInterval(NET.timer);NET.paused=true;setTimeout(hostEnd,1500);return}
   pvpStep();
   NET.board=hostBoard();
@@ -908,7 +983,8 @@ function clientRecv(d){
   else if(d.t==='start'){NET.started=true;NET.cfg=d.cfg;NET.speed=d.speed;NET.paused=true;NET.players={};pvpBegin(d.cfg);toast('⚔️ 対戦開始！まもなく時間が進みます',2500)}
   else if(d.t==='pause'){NET.paused=d.v;NET.speed=d.speed;if(G&&G.mode==='pvp')renderCtl()}
   else if(d.t==='day'){
-    if(!G||G.mode!=='pvp')return;
+    if(!G||G.mode!=='pvp'){NET.pendingDay=d;return}
+    NET.pendingDay=null;
     const target=Math.min(G.end,idxOf(D.dates,d.d));
     while(G.day<target)pvpStep();
     NET.board=d.board||NET.board;netReportEq();refresh();
@@ -938,26 +1014,32 @@ function showPvpResult(){
 
 // ---------- 最新データの取得（公開版：data.json を毎営業日自動更新） ----------
 async function checkUpdate(manual){
-  if(location.protocol==='file:'){if(manual)toast(`内蔵データ：${D.R.last} 終値まで（公開版では毎営業日自動更新）`);return false}
+  if(location.protocol==='file:'||M.v!==2){if(manual)toast(`内蔵データ：${M.dates[M.last]} 終値まで（公開版では毎営業日自動更新）`);return false}
   try{
-    const r=await fetch('data.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw 0;
+    const r=await fetch('manifest.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw 0;
     const R=await r.json();
-    if(R.last>D.R.last){
-      if(G&&G.mode==='pvp')return false; // 対戦中は差し替えない
-      D=decode(R);if(manual||G)toast(`📡 最新データ（${R.last} 終値）を読み込みました`);
-      if(G&&G.mode==='live'){openLive()}else if(G&&!$('game').classList.contains('hide')){stopPlay();saveGame();G=loadGame('kabu_scn');render()}else if(!G||$('game').classList.contains('hide'))renderMenu();return true}
-    if(manual)toast(`データは最新です（${D.R.last} 終値）。毎営業日の夕方に更新されます`);
-  }catch(e){if(manual)toast(`最新データを取得できませんでした（内蔵データ：${D.R.last} 終値まで）`)}
+    if(R.last>M.dates[M.last]){
+      if(G&&G.mode!=='live'&&!$('game').classList.contains('hide'))return false; // 過去シナリオ・対戦中はそのまま
+      initManifest(R);DL=await loadWindow(M.last-260,M.last);toast(`📡 最新データ（${R.last} 終値）を読み込みました`);
+      if(G&&G.mode==='live'&&!$('game').classList.contains('hide'))openLive();else renderMenu();return true}
+    if(manual)toast(`データは最新です（${M.dates[M.last]} 終値）。毎営業日の夕方に更新されます`);
+  }catch(e){if(manual)toast('最新データを取得できませんでした')}
   return false;
 }
 let rzT;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(UI.detail)renderDetail();else if(G&&!$('game').classList.contains('hide'))renderMain();else if(!G||$('game').classList.contains('hide'))renderMenu()},150)});
 window.addEventListener('beforeunload',()=>{if(NET.peer)leaveRoom()});
 // 起動
-D=decode(JSON.parse($('pricedata').textContent));
-renderMenu();
-checkUpdate(false);
-{const m=location.search.match(/room=(\d{6})/);if(m)onlineSheet(m[1])}
-window.__K={get G(){return G},get D(){return D},UI,NET,adv,doTrade,newGame,SCN,finish,stats,equity,openLive,newLive};
+async function boot(){
+  let ok=false;
+  if(location.protocol!=='file:'){try{const r=await fetch('manifest.json?t='+Date.now(),{cache:'no-store'});if(r.ok){initManifest(await r.json());ok=true}}catch(e){}}
+  if(!ok){const emb=JSON.parse($('pricedata').textContent||'null');if(!emb){$('menu').innerHTML='<p class="sub" style="padding:40px;text-align:center">株価データを読み込めませんでした。通信状況を確認して再読み込みしてください。</p>';return}initLegacy(emb)}
+  loading(true,'株価データを読み込み中…');
+  try{DL=await loadWindow(M.last-260,M.last)}catch(e){loading(false);$('menu').innerHTML='<p class="sub" style="padding:40px;text-align:center">株価データを読み込めませんでした。再読み込みしてください。</p>';return}
+  D=DL;renderMenu();
+  const m=location.search.match(/room=(\d{6})/);if(m)onlineSheet(m[1]);
+}
+boot();
+window.__K={get G(){return G},get D(){return D},get M(){return M},UI,NET,adv,doTrade,newGame,SCN,finish,stats,equity,openLive,newLive};
 </script>
 </body>
 </html>
