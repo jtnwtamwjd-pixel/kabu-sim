@@ -11,4 +11,14 @@
 - `tools/fetch.py` / `tools/build.py` … 主要銘柄だけを埋め込んだオフライン版用
 - `.github/workflows/update-prices` … 平日16:30/21:00(JST)に株価を更新して `gh-pages` に公開
 
+## 割安株スクリーナー
+
+▶ https://jtnwtamwjd-pixel.github.io/kabu-sim/screen/
+
+東証全銘柄（プライム・スタンダード・グロース）を PBR・ROE・自己資本比率（初期値 1倍以下・10%以上・40%以上）などで絞り込む。
+
+- `screen.html` … 画面（`screen/index.html` として公開、`screen/data.json` を読む）
+- `tools/fetch_screen.py` … JPX の銘柄一覧＋ yfinance で指標を取得して `data/screen.json` を生成
+- `.github/workflows/update-screen` … 平日15:45(JST)に指標を更新し、終わったら update-prices を起動して公開
+
 株価データは Yahoo Finance 経由。ゲーム内の取引は仮想で、投資助言ではありません。

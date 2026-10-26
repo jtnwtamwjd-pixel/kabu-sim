@@ -1,7 +1,6 @@
 name: update-prices
 on:
   schedule:
-    - cron: '30 7 * * 1-5'   # 16:30 JST, weekdays
     - cron: '0 12 * * 1-5'   # 21:00 JST retry
   workflow_dispatch:
   push:
@@ -22,6 +21,8 @@ jobs:
           python -c "open('site/index.html','w').write(open('src.html').read().replace('__DATA__','null'))"
           touch site/.nojekyll
           if [ -f data/profile.json ]; then cp data/profile.json site/profile.json; fi
+          mkdir -p site/screen && cp screen.html site/screen/index.html
+          if [ -f data/screen.json ]; then cp data/screen.json site/screen/data.json; fi
       - name: publish to gh-pages
         run: |
           cd site
