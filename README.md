@@ -15,7 +15,7 @@
 
 ▶ https://jtnwtamwjd-pixel.github.io/kabu-sim/screen/
 
-東証全銘柄（プライム・スタンダード・グロース）を PBR・ROE・自己資本比率（初期値 1倍以下・10%以上・40%以上）などで絞り込む。
+東証全銘柄（プライム・スタンダード・グロース）を PBR・ROE・自己資本比率（初期値 1倍以下・10%以上・40%以上）に加え、PER・予想PER・PSR・EV/EBITDA・ネットキャッシュ比率・ROA・利益率・流動比率・D/E・成長率・配当性向・連続増配・52週高値比など全27指標の上限/下限で絞り込む。
 
 - `screen.html` … 画面（`screen/index.html` として公開、`screen/data.json` を読む）
 - `tools/fetch_screen.py` … JPX の銘柄一覧＋ yfinance で指標を取得して `data/screen.json` を生成

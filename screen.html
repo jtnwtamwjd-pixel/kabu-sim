@@ -4,22 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>割安株スクリーナー</title>
-<meta name="description" content="東証全銘柄からPBR・ROE・自己資本比率などの条件で割安株を絞り込むスクリーニングツール">
+<meta name="description" content="東証全銘柄からPBR・ROE・自己資本比率・PER・成長率・配当など25指標で割安株を絞り込むスクリーニングツール">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#07090f;--bg2:#0c1018;--card:rgba(255,255,255,.035);--card2:rgba(255,255,255,.065);--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.16);
   --tx:#f2f5fa;--sub:#8a93a6;--mute:#5b6476;--ok:#18d18c;--ng:#ff4d6d;--gold:#ffc65c;
-  --acc:#8b7bff;--acc2:#3ed6ff;--grad:linear-gradient(120deg,#8b7bff 0%,#3ed6ff 100%);--hdr:rgba(7,9,15,.8);--r:16px;
+  --acc:#8b7bff;--acc2:#3ed6ff;--grad:linear-gradient(120deg,#8b7bff 0%,#3ed6ff 100%);--r:16px;
 }
 @media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
   --bg:#f5f6fb;--bg2:#ffffff;--card:#ffffff;--card2:#eef0f7;--line:rgba(10,20,50,.09);--line2:rgba(10,20,50,.18);
-  --tx:#141824;--sub:#5a6275;--mute:#8d94a5;--ok:#0a9d66;--ng:#d6334f;--gold:#b47a00;--acc:#6a58f0;--acc2:#0aa7d6;--hdr:rgba(245,246,251,.85);
+  --tx:#141824;--sub:#5a6275;--mute:#8d94a5;--ok:#0a9d66;--ng:#d6334f;--gold:#b47a00;--acc:#6a58f0;--acc2:#0aa7d6;
 }}
 :root[data-theme="light"]{
   --bg:#f5f6fb;--bg2:#ffffff;--card:#ffffff;--card2:#eef0f7;--line:rgba(10,20,50,.09);--line2:rgba(10,20,50,.18);
-  --tx:#141824;--sub:#5a6275;--mute:#8d94a5;--ok:#0a9d66;--ng:#d6334f;--gold:#b47a00;--acc:#6a58f0;--acc2:#0aa7d6;--hdr:rgba(245,246,251,.85);
+  --tx:#141824;--sub:#5a6275;--mute:#8d94a5;--ok:#0a9d66;--ng:#d6334f;--gold:#b47a00;--acc:#6a58f0;--acc2:#0aa7d6;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--tx);font-family:"Inter","Noto Sans JP",-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic UI",sans-serif;font-size:15px;-webkit-text-size-adjust:100%}
@@ -30,15 +30,18 @@ button{border:1px solid var(--line);background:var(--card2);border-radius:11px;p
 button:hover{border-color:var(--line2)}
 input,select{background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:8px 10px;outline:none;min-width:0}
 input:focus,select:focus{border-color:var(--acc)}
+input[type=number]{-moz-appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+[hidden]{display:none !important}
 .num{font-variant-numeric:tabular-nums}
-.wrap{max-width:1180px;margin:0 auto;padding:0 16px 60px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 16px 60px}
 header{padding:22px 0 8px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .mk{width:44px;height:44px;border-radius:13px;background:var(--grad);display:grid;place-items:center;color:#fff;font-weight:800;font-size:20px;box-shadow:0 8px 28px rgba(139,123,255,.35);flex:none}
 h1{margin:0;font-size:23px;font-weight:800;letter-spacing:.03em}
 h1 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 header p{margin:2px 0 0;color:var(--sub);font-size:12.5px}
 header .sp{flex:1}
-.lnk{font-size:12.5px;color:var(--sub);text-decoration:none;border:1px solid var(--line);padding:6px 10px;border-radius:20px}
+.lnk{font-size:12.5px;color:var(--sub);text-decoration:none;border:1px solid var(--line);padding:6px 10px;border-radius:20px;background:none}
 .lnk:hover{color:var(--tx);border-color:var(--line2)}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-top:12px}
 .main3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
@@ -51,22 +54,32 @@ header .sp{flex:1}
 .cond .v .u{font-size:14px;color:var(--sub)}
 .cond input[type=range]{width:100%;margin-top:6px;accent-color:var(--acc);padding:0;border:0;background:none}
 .cond.off .v,.cond.off input[type=range]{opacity:.35}
-.sw{position:relative;display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:12px}
-.sw input{appearance:none;-webkit-appearance:none;width:32px;height:18px;border-radius:10px;background:var(--line2);position:relative;cursor:pointer;padding:0;border:0;transition:background .15s}
+.sw{position:relative;display:inline-flex;align-items:center;cursor:pointer}
+.sw input{appearance:none;-webkit-appearance:none;width:32px;height:18px;border-radius:10px;background:var(--line2);position:relative;cursor:pointer;padding:0;border:0;transition:background .15s;flex:none}
 .sw input::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .15s}
 .sw input:checked{background:var(--acc)}
 .sw input:checked::after{left:16px}
-.sub3{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
-.sub3 .cond .v input{font-size:17px;width:72px}
-details summary{cursor:pointer;color:var(--sub);font-size:13px;margin-top:12px;list-style:none;display:inline-flex;gap:6px;align-items:center}
+details summary{cursor:pointer;color:var(--sub);font-size:13px;margin-top:14px;list-style:none;display:inline-flex;gap:6px;align-items:center}
 details summary::-webkit-details-marker{display:none}
 details summary::before{content:"＋";font-weight:700}
 details[open] summary::before{content:"−"}
+details summary b{color:var(--tx);background:var(--acc);color:#fff;border-radius:10px;padding:0 7px;font-size:11.5px}
+.groups{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.grp{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.grp h3{margin:0 0 6px;font-size:12px;color:var(--sub);font-weight:700;letter-spacing:.08em}
+.mrow{display:grid;grid-template-columns:34px 1fr 64px 12px 64px 30px;align-items:center;gap:4px;padding:4px 0;font-size:13px}
+.mrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:help}
+.mrow input[type=number]{padding:5px 6px;font-size:13px;border-radius:8px;width:100%;text-align:right}
+.mrow .tl{color:var(--mute);text-align:center;font-size:12px}
+.mrow .u{color:var(--sub);font-size:11.5px}
+.mrow.off .nm{color:var(--sub)}
+.mrow.off input[type=number]{opacity:.55}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
 .chip{border-radius:20px;padding:6px 12px;font-size:13px;background:var(--card2);border:1px solid var(--line);cursor:pointer;user-select:none}
 .chip.on{background:linear-gradient(var(--bg2),var(--bg2)) padding-box,var(--grad) border-box;border:1px solid transparent;font-weight:700}
 .row .grow{flex:1;min-width:160px}
 .preset{font-size:12.5px;padding:6px 11px;border-radius:20px}
+.lbl{font-size:12px;color:var(--sub)}
 .sum{display:flex;align-items:flex-end;gap:14px;margin:22px 4px 10px;flex-wrap:wrap}
 .sum .big{font-size:34px;font-weight:800;line-height:1}
 .sum .big small{font-size:14px;color:var(--sub);font-weight:500;margin-left:4px}
@@ -75,31 +88,39 @@ details[open] summary::before{content:"−"}
 .secs span{font-size:12px;padding:3px 9px;border-radius:20px;background:var(--card);border:1px solid var(--line);color:var(--sub);cursor:pointer}
 .secs span b{color:var(--tx);margin-left:4px}
 .secs span.on{border-color:var(--acc);color:var(--tx)}
+.tbl{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:auto;max-height:80vh}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
-.tbl{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-th{position:sticky;top:0;background:var(--bg2);text-align:right;font-weight:600;color:var(--sub);font-size:12px;padding:10px 10px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;user-select:none}
+th{position:sticky;top:0;z-index:1;background:var(--bg2);text-align:right;font-weight:600;color:var(--sub);font-size:12px;padding:10px 10px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;user-select:none}
 th.l,td.l{text-align:left}
 th.s{color:var(--tx)}
 th.s::after{content:" ▼";font-size:9px}
 th.s.asc::after{content:" ▲"}
-td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th.x{color:var(--acc)}
+td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 tr:last-child td{border-bottom:0}
 tbody tr:hover{background:var(--card2)}
 td .nm{font-weight:600;text-decoration:none}
 td .nm:hover{text-decoration:underline}
 td .cd{color:var(--sub);font-size:12px;margin-right:6px}
-.mkt{font-size:11px;padding:1px 6px;border-radius:6px;border:1px solid var(--line2);color:var(--sub)}
+td .ms{display:block;color:var(--sub);font-size:11.5px;margin-top:1px}
 .good{color:var(--ok);font-weight:600}
 .na{color:var(--mute)}
+.neg{color:var(--ng)}
 .cards{display:none}
 .more{display:block;margin:14px auto 0}
 .empty{padding:40px;text-align:center;color:var(--sub)}
 .note{font-size:12px;color:var(--sub);line-height:1.7;margin-top:26px}
 .note b{color:var(--tx)}
+.note dl{display:grid;grid-template-columns:auto 1fr;gap:2px 14px;margin:8px 0}
+.note dt{color:var(--tx);white-space:nowrap}.note dd{margin:0}
 #load{padding:60px 0;text-align:center;color:var(--sub)}
+.sortm{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:var(--sub)}
+@media (max-width:1000px){.groups{grid-template-columns:1fr 1fr}}
 @media (max-width:820px){
-  .main3{grid-template-columns:1fr}
-  .sub3{grid-template-columns:1fr 1fr}
+  .main3{grid-template-columns:1fr;gap:8px}
+  .groups{grid-template-columns:1fr}
+  .mrow{grid-template-columns:34px 1fr 62px 10px 62px 28px}
+  .mrow .nm{white-space:normal;font-size:12.5px;line-height:1.3}
   .tbl{display:none}
   .cards{display:block}
   .cardx{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px}
@@ -108,11 +129,11 @@ td .cd{color:var(--sub);font-size:12px;margin-right:6px}
   .cardx .t .px{font-weight:700;white-space:nowrap}
   .cardx .m{font-size:12px;color:var(--sub);margin-top:2px}
   .cardx .g{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px;margin-top:8px;font-size:13px}
-  .cardx .g div{display:flex;flex-direction:column}
-  .cardx .g span{font-size:11px;color:var(--sub)}
-  .sortm{display:inline-flex !important}
+  .cardx .g div{display:flex;flex-direction:column;min-width:0}
+  .cardx .g span{font-size:11px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .note dl{grid-template-columns:1fr}
+  .note dd{margin-bottom:6px}
 }
-.sortm{display:none;gap:6px;align-items:center}
 </style>
 </head>
 <body>
@@ -126,49 +147,24 @@ td .cd{color:var(--sub);font-size:12px;margin-right:6px}
 </header>
 
 <div class="panel">
-  <div class="main3">
-    <div class="cond" data-k="pbr"><div class="lb">PBR（株価純資産倍率）<label class="sw"><input type="checkbox" checked></label></div>
-      <div class="v"><input class="num" type="number" step="0.1" min="0"><span class="op">倍以下</span></div>
-      <input type="range" min="0.2" max="3" step="0.05"></div>
-    <div class="cond" data-k="roe"><div class="lb">ROE（自己資本利益率）<label class="sw"><input type="checkbox" checked></label></div>
-      <div class="v"><input class="num" type="number" step="1"><span class="u">%</span><span class="op">以上</span></div>
-      <input type="range" min="0" max="30" step="0.5"></div>
-    <div class="cond" data-k="eqr"><div class="lb">自己資本比率<label class="sw"><input type="checkbox" checked></label></div>
-      <div class="v"><input class="num" type="number" step="5" min="0" max="100"><span class="u">%</span><span class="op">以上</span></div>
-      <input type="range" min="0" max="90" step="1"></div>
-  </div>
+  <div class="main3" id="main3"></div>
   <details id="adv">
-    <summary>その他の条件（PER・配当利回り・時価総額・営業利益率）</summary>
-    <div class="sub3">
-      <div class="cond off" data-k="per"><div class="lb">PER<label class="sw"><input type="checkbox"></label></div>
-        <div class="v"><input class="num" type="number" step="1" min="0"><span class="op">倍以下</span></div></div>
-      <div class="cond off" data-k="dy"><div class="lb">配当利回り<label class="sw"><input type="checkbox"></label></div>
-        <div class="v"><input class="num" type="number" step="0.5" min="0"><span class="u">%</span><span class="op">以上</span></div></div>
-      <div class="cond off" data-k="mc"><div class="lb">時価総額<label class="sw"><input type="checkbox"></label></div>
-        <div class="v"><input class="num" type="number" step="50" min="0"><span class="u">億円</span><span class="op">以上</span></div></div>
-      <div class="cond off" data-k="opm"><div class="lb">営業利益率<label class="sw"><input type="checkbox"></label></div>
-        <div class="v"><input class="num" type="number" step="1"><span class="u">%</span><span class="op">以上</span></div></div>
-    </div>
+    <summary>指標を追加して絞り込む（全25指標・上限/下限） <b id="advn" hidden></b></summary>
+    <div class="groups" id="groups"></div>
   </details>
   <div class="row" id="mkts"></div>
   <div class="row">
     <input class="grow" id="q" type="search" placeholder="銘柄名・コードで検索">
     <select id="sec"><option value="">全業種</option></select>
   </div>
-  <div class="row">
-    <span style="font-size:12px;color:var(--sub)">プリセット</span>
-    <button class="preset" data-p="std">標準（1倍・10%・40%）</button>
-    <button class="preset" data-p="strict">厳しめ（0.8倍・12%・50%）</button>
-    <button class="preset" data-p="div">高配当割安（1倍・利回り3.5%）</button>
-    <button class="preset" data-p="net">キャッシュリッチ（0.7倍・自己資本60%）</button>
-  </div>
+  <div class="row" id="presets"><span class="lbl">プリセット</span></div>
 </div>
 
 <div id="load">データを読み込み中…</div>
 <div id="res" hidden>
   <div class="sum">
     <div class="big num" id="cnt">0<small>銘柄</small></div>
-    <div class="sub" id="cntsub" style="color:var(--sub);font-size:13px"></div>
+    <div id="cntsub" style="color:var(--sub);font-size:13px"></div>
     <div class="sp"></div>
     <label class="sortm">並び順 <select id="sortm"></select></label>
     <button id="csv">CSV</button>
@@ -180,83 +176,189 @@ td .cd{color:var(--sub);font-size:12px;margin-right:6px}
 </div>
 
 <div class="note">
-  <b>データについて</b>　銘柄一覧は日本取引所グループ（JPX）の上場銘柄一覧、株価・財務指標は Yahoo Finance から平日の取引終了後に自動取得しています。PBR は株価÷1株純資産、ROE は直近12か月の純利益ベース、自己資本比率は直近の決算期末の株主資本（自己資本）÷総資産です。会社発表や証券会社の値と定義・時点が異なることがあり、欠損している銘柄はその条件で除外されます。<br>
-  銀行・証券・保険は事業の性質上、自己資本比率が低く出るため、自己資本比率の条件をオフにすると見つけやすくなります。<br>
+  <b>指標の定義</b>
+  <dl id="defs"></dl>
+  <b>データについて</b>　銘柄一覧は日本取引所グループ（JPX）の上場銘柄一覧、株価・財務指標は Yahoo Finance から平日の取引終了後に自動取得しています。会社発表や証券会社の値と定義・時点が異なることがあり、条件をオンにした指標が欠損している銘柄は除外されます。銀行・証券・保険は事業の性質上、自己資本比率が低く出ます。PERが極端に低い銘柄は一時的な特別利益の影響のことがあります。<br>
   投資判断はご自身の責任で行ってください。本ツールは投資助言ではありません。
 </div>
 </div>
 
 <script>
 "use strict";
-const DEF = {pbr:[1,1],roe:[10,1],eqr:[40,1],per:[15,0],dy:[3,0],mc:[100,0],opm:[8,0]};
-// [値, 有効]。比較方向: le=以下, ge=以上。表示値 → 内部値の倍率
-const SPEC = {pbr:{op:"le",f:1},roe:{op:"ge",f:100},eqr:{op:"ge",f:100},per:{op:"le",f:1},dy:{op:"ge",f:100},mc:{op:"ge",f:1e-8},opm:{op:"ge",f:100}};
-const PRESETS = {
-  std:{pbr:[1,1],roe:[10,1],eqr:[40,1],per:[15,0],dy:[3,0],mc:[100,0],opm:[8,0]},
-  strict:{pbr:[0.8,1],roe:[12,1],eqr:[50,1],per:[15,0],dy:[3,0],mc:[100,0],opm:[8,0]},
-  div:{pbr:[1,1],roe:[8,0],eqr:[40,1],per:[15,0],dy:[3.5,1],mc:[100,0],opm:[8,0]},
-  net:{pbr:[0.7,1],roe:[5,1],eqr:[60,1],per:[15,0],dy:[3,0],mc:[100,0],opm:[8,0]},
-};
-const MKTS = ["プライム","スタンダード","グロース"];
-const COLS = [
-  {k:"name",t:"銘柄",l:1},{k:"mkt",t:"市場",l:1},{k:"sec",t:"業種",l:1},{k:"px",t:"株価"},
-  {k:"pbr",t:"PBR"},{k:"roe",t:"ROE"},{k:"eqr",t:"自己資本比率"},{k:"per",t:"PER"},{k:"dy",t:"配当利回り"},{k:"mc",t:"時価総額"},
+// 指標の定義。f: 表示値 = 内部値×f、d: 小数桁、pos: 上限指定時に正の値のみ
+const M = [
+  {k:"pbr",t:"PBR",g:"割安性",u:"倍",f:1,d:2,pos:1,x:"株価 ÷ 1株あたり純資産。1倍未満は解散価値割れ"},
+  {k:"per",t:"PER",g:"割安性",u:"倍",f:1,d:1,pos:1,x:"株価 ÷ 1株利益（直近12か月）。赤字は欠損"},
+  {k:"fpe",t:"予想PER",g:"割安性",u:"倍",f:1,d:1,pos:1,x:"株価 ÷ 今期予想1株利益（アナリスト予想。中小型は欠損が多い）"},
+  {k:"psr",t:"PSR",g:"割安性",u:"倍",f:1,d:2,pos:1,x:"時価総額 ÷ 売上高（直近12か月）"},
+  {k:"ev",t:"EV/EBITDA",g:"割安性",u:"倍",f:1,d:1,pos:1,x:"（時価総額＋純有利子負債）÷ EBITDA。買収価格の何年分の稼ぎか"},
+  {k:"ncr",t:"ネットキャッシュ比率",g:"割安性",u:"%",f:100,d:0,x:"（現金・短期投資 − 有利子負債）÷ 時価総額"},
+  {k:"kncr",t:"清原式NC比率",g:"割安性",u:"%",f:100,d:0,x:"（流動資産 ＋ 投資有価証券×70% − 負債合計）÷ 時価総額。100%超は時価総額以上の正味現金を持つ目安"},
+  {k:"roe",t:"ROE",g:"収益性",u:"%",f:100,d:1,x:"純利益（直近12か月）÷ 自己資本"},
+  {k:"roa",t:"ROA",g:"収益性",u:"%",f:100,d:1,x:"純利益 ÷ 総資産"},
+  {k:"opm",t:"営業利益率",g:"収益性",u:"%",f:100,d:1,x:"営業利益 ÷ 売上高"},
+  {k:"npm",t:"純利益率",g:"収益性",u:"%",f:100,d:1,x:"純利益 ÷ 売上高"},
+  {k:"gpm",t:"粗利率",g:"収益性",u:"%",f:100,d:1,x:"売上総利益 ÷ 売上高"},
+  {k:"eqr",t:"自己資本比率",g:"安全性",u:"%",f:100,d:1,x:"自己資本（株主資本＋その他包括利益）÷ 総資産（直近決算期末）"},
+  {k:"cr",t:"流動比率",g:"安全性",u:"%",f:100,d:0,x:"流動資産 ÷ 流動負債。200%以上で短期の支払い余力が厚い"},
+  {k:"de",t:"D/Eレシオ",g:"安全性",u:"倍",f:1,d:2,x:"有利子負債 ÷ 自己資本"},
+  {k:"rg1",t:"売上成長率(1年)",g:"成長性",u:"%",f:100,d:1,x:"直近決算期の売上高の前期比"},
+  {k:"rg3",t:"売上成長率(3年)",g:"成長性",u:"%",f:100,d:1,x:"売上高の3年間の年平均成長率"},
+  {k:"og1",t:"営業利益成長率",g:"成長性",u:"%",f:100,d:1,x:"直近決算期の営業利益の前期比（前期が赤字なら欠損）"},
+  {k:"ng1",t:"純利益成長率",g:"成長性",u:"%",f:100,d:1,x:"直近決算期の純利益の前期比（前期が赤字なら欠損）"},
+  {k:"dy",t:"配当利回り",g:"配当",u:"%",f:100,d:2,x:"年間配当（会社予想ベース）÷ 株価"},
+  {k:"po",t:"配当性向",g:"配当",u:"%",f:100,d:0,x:"配当 ÷ 純利益"},
+  {k:"dgy",t:"連続増配",g:"配当",u:"年",f:1,d:0,x:"暦年ごとの1株配当が前年より増えた年の連続数（配当履歴から算出）"},
+  {k:"dny",t:"減配なし",g:"配当",u:"年",f:1,d:0,x:"暦年ごとの1株配当が前年以上だった年の連続数"},
+  {k:"mc",t:"時価総額",g:"株価・規模",u:"億円",f:1e-8,d:0,x:"株価 × 発行済株式数"},
+  {k:"h52",t:"52週高値比",g:"株価・規模",u:"%",f:100,d:1,x:"株価が52週高値から何%下にあるか（−30なら高値から30%安）"},
+  {k:"r1y",t:"1年騰落率",g:"株価・規模",u:"%",f:100,d:1,x:"52週前からの株価の変化率"},
+  {k:"beta",t:"ベータ",g:"株価・規模",u:"",f:1,d:2,x:"市場全体に対する値動きの大きさ（1で市場並み）"},
 ];
-let S = {c:JSON.parse(JSON.stringify(DEF)), m:MKTS.slice(), q:"", sec:"", sort:"pbr", asc:1};
+const MK = Object.fromEntries(M.map(m=>[m.k,m]));
+const GROUPS = [...new Set(M.map(m=>m.g))];
+// 上段の3カード：指標・どちらの境界を動かすか・スライダー範囲
+const MAIN = [{k:"pbr",lb:"PBR（株価純資産倍率）",b:"hi",op:"倍以下",rng:[0.2,3,0.05]},{k:"roe",lb:"ROE（自己資本利益率）",b:"lo",op:"以上",rng:[0,30,0.5]},{k:"eqr",lb:"自己資本比率",b:"lo",op:"以上",rng:[0,90,1]}];
+const BASE = {pbr:{hi:1,on:1},roe:{lo:10,on:1},eqr:{lo:40,on:1}};
+const PRESETS = [
+  ["標準（PBR1倍・ROE10%・自己資本40%）", BASE],
+  ["厳しめ", {pbr:{hi:0.8,on:1},roe:{lo:12,on:1},eqr:{lo:50,on:1},per:{hi:12,on:1}}],
+  ["高配当割安", {pbr:{hi:1,on:1},eqr:{lo:40,on:1},dy:{lo:3.5,on:1},po:{hi:60,on:1}}],
+  ["連続増配", {dgy:{lo:5,on:1},dy:{lo:2.5,on:1},eqr:{lo:40,on:1}}],
+  ["成長割安", {per:{hi:15,on:1},rg3:{lo:10,on:1},roe:{lo:12,on:1},og1:{lo:0,on:1}}],
+  ["ネットネット株", {kncr:{lo:100,on:1},per:{hi:15,on:1}}],
+  ["キャッシュリッチ", {pbr:{hi:0.7,on:1},eqr:{lo:60,on:1},ncr:{lo:30,on:1}}],
+  ["高値から急落", {h52:{hi:-30,on:1},pbr:{hi:1.2,on:1},eqr:{lo:40,on:1}}],
+];
+const MKTS = ["プライム","スタンダード","グロース"];
+const CORE = ["px","pbr","roe","eqr","per","dy","mc"];
+const clone = o => JSON.parse(JSON.stringify(o));
+let S = {c:clone(BASE), m:MKTS.slice(), q:"", sec:"", sort:"pbr", asc:1};
 let ROWS = [], HITS = [], shown = 100, secPick = "";
 
 const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const cond = k => S.c[k] || (S.c[k] = {on:0});
 
 function loadState(){
   try{
     const h = location.hash.slice(1);
-    const src = h ? JSON.parse(decodeURIComponent(atob(h))) : JSON.parse(store.get("scr_state")||"null");
-    if(src){ S = {...S, ...src, c:{...S.c, ...(src.c||{})}}; }
+    const src = h ? JSON.parse(decodeURIComponent(atob(h))) : JSON.parse(store.get("scr_state2")||"null");
+    if(src){
+      const c = src.c && !Object.values(src.c).some(Array.isArray) ? src.c : clone(BASE);  // 旧形式は初期値に戻す
+      S = {...S, ...src, c};
+    }
   }catch(e){}
 }
 function saveState(){
+  for(const k in S.c){ const c = S.c[k]; if(!c.on && c.lo == null && c.hi == null) delete S.c[k]; }
   const js = JSON.stringify(S);
-  store.set("scr_state", js);
+  store.set("scr_state2", js);
   history.replaceState(null, "", "#" + btoa(encodeURIComponent(js)));
 }
 
-const fmt = {
-  px:v=>v==null?"—":v.toLocaleString("ja-JP",{maximumFractionDigits:1}),
-  pbr:v=>v==null?"—":v.toFixed(2)+"倍", per:v=>v==null||v<0?"—":v.toFixed(1)+"倍",
-  roe:v=>v==null?"—":(v*100).toFixed(1)+"%", eqr:v=>v==null?"—":(v*100).toFixed(1)+"%",
-  dy:v=>v==null?"—":(v*100).toFixed(2)+"%", opm:v=>v==null?"—":(v*100).toFixed(1)+"%",
-  mc:v=>v==null?"—":(v>=1e12?(v/1e12).toFixed(2)+"兆円":Math.round(v/1e8).toLocaleString()+"億円"),
-};
-
-function bindConds(){
-  document.querySelectorAll(".cond").forEach(el=>{
-    const k = el.dataset.k, [num, rng] = [el.querySelector(".v input"), el.querySelector("input[type=range]")], sw = el.querySelector(".sw input");
-    const paint = (keep)=>{ if(keep !== num) num.value = S.c[k][0]; if(rng) rng.value = S.c[k][0]; sw.checked = !!S.c[k][1]; el.classList.toggle("off", !S.c[k][1]); };
-    el._paint = paint; paint();
-    const upd = (v, src)=>{ const x = parseFloat(v); if(!isNaN(x)){ S.c[k][0] = x; S.c[k][1] = 1; paint(src); run(); } };
-    num.addEventListener("input", ()=>upd(num.value, num));
-    if(rng) rng.addEventListener("input", ()=>{ upd(rng.value); });
-    sw.addEventListener("change", ()=>{ S.c[k][1] = sw.checked?1:0; paint(); run(); });
-  });
-  if(["per","dy","mc","opm"].some(k=>S.c[k][1])) $("#adv").open = true;
+function fmtv(k, v){
+  if(v == null) return "—";
+  if(k === "px") return v.toLocaleString("ja-JP",{maximumFractionDigits:1});
+  if(k === "mc") return v >= 1e12 ? (v/1e12).toFixed(2)+"兆円" : Math.round(v/1e8).toLocaleString()+"億円";
+  const m = MK[k], x = v * m.f;
+  return x.toLocaleString("ja-JP",{minimumFractionDigits:m.d,maximumFractionDigits:m.d}) + m.u;
 }
-function paintAll(){
-  document.querySelectorAll(".cond").forEach(el=>el._paint());
+const num = v => { if(v === "" || v == null) return null; const x = parseFloat(v); return isNaN(x) ? null : x; };
+
+function buildUI(){
+  $("#main3").innerHTML = MAIN.map(c=>{ const m = MK[c.k]; return `<div class="cond" data-k="${c.k}">
+    <div class="lb" title="${esc(m.x)}">${c.lb}<label class="sw"><input type="checkbox"></label></div>
+    <div class="v"><input class="num" type="number" step="${c.rng[2]*2}">${m.u && m.u!=="倍" ? `<span class="u">${m.u}</span>` : ""}<span class="op">${c.op}</span></div>
+    <input type="range" min="${c.rng[0]}" max="${c.rng[1]}" step="${c.rng[2]}"></div>`; }).join("");
+  $("#groups").innerHTML = GROUPS.map(g=>`<div class="grp"><h3>${g}</h3>${M.filter(m=>m.g===g).map(m=>`
+    <div class="mrow" data-k="${m.k}"><label class="sw"><input type="checkbox"></label><span class="nm" title="${esc(m.x)}">${m.t}</span>
+    <input class="num lo" type="number" placeholder="下限" step="any"><span class="tl">〜</span><input class="num hi" type="number" placeholder="上限" step="any"><span class="u">${m.u}</span></div>`).join("")}</div>`).join("");
+  $("#defs").innerHTML = M.map(m=>`<dt>${m.t}</dt><dd>${esc(m.x)}</dd>`).join("");
+  $("#mkts").innerHTML = `<span class="lbl">市場</span>` + MKTS.map(m=>`<span class="chip" data-m="${m}">${m}</span>`).join("");
+  $("#presets").innerHTML += PRESETS.map(([t],i)=>`<button class="preset" data-i="${i}">${t}</button>`).join("");
+  const opts = [["pbr",1],["per",1],["fpe",1],["psr",1],["ev",1],["ncr",0],["kncr",0],["roe",0],["roa",0],["opm",0],["eqr",0],["cr",0],["de",1],["rg1",0],["rg3",0],["og1",0],["dy",0],["po",1],["dgy",0],["mc",0],["h52",1],["r1y",0]];
+  $("#sortm").innerHTML = opts.map(([k,a])=>`<option value="${k}:${a}">${MK[k].t}${a?"が低い順":"が高い順"}</option>`).join("") + `<option value="name:1">名前順</option><option value="code:1">コード順</option>`;
+}
+
+function paint(skip){
+  document.querySelectorAll("#main3 .cond").forEach(el=>{
+    const k = el.dataset.k, b = MAIN.find(c=>c.k===k).b, c = cond(k);
+    const n = el.querySelector(".v input"), r = el.querySelector("input[type=range]");
+    if(n !== skip) n.value = c[b] ?? ""; r.value = c[b] ?? r.min;
+    el.querySelector(".sw input").checked = !!c.on; el.classList.toggle("off", !c.on);
+  });
+  document.querySelectorAll(".mrow").forEach(el=>{
+    const c = cond(el.dataset.k);
+    for(const b of ["lo","hi"]){ const i = el.querySelector("."+b); if(i !== skip) i.value = c[b] ?? ""; }
+    el.querySelector(".sw input").checked = !!c.on; el.classList.toggle("off", !c.on);
+  });
+  const extra = Object.keys(S.c).filter(k=>S.c[k].on && !MAIN.some(c=>c.k===k)).length;
+  $("#advn").hidden = !extra; $("#advn").textContent = extra;
   document.querySelectorAll("#mkts .chip").forEach(c=>c.classList.toggle("on", S.m.includes(c.dataset.m)));
   $("#q").value = S.q; $("#sec").value = S.sec;
+  $("#sortm").value = S.sort + ":" + S.asc;
+}
+
+function bind(){
+  document.querySelectorAll("#main3 .cond").forEach(el=>{
+    const k = el.dataset.k, b = MAIN.find(c=>c.k===k).b;
+    const set = (v, src)=>{ const c = cond(k); c[b] = num(v); c.on = c[b] != null ? 1 : c.on; paint(src); run(); };
+    el.querySelector(".v input").addEventListener("input", e=>set(e.target.value, e.target));
+    el.querySelector("input[type=range]").addEventListener("input", e=>set(e.target.value));
+    el.querySelector(".sw input").addEventListener("change", e=>{ cond(k).on = e.target.checked ? 1 : 0; paint(); run(); });
+  });
+  document.querySelectorAll(".mrow").forEach(el=>{
+    const k = el.dataset.k;
+    for(const b of ["lo","hi"]) el.querySelector("."+b).addEventListener("input", e=>{
+      const c = cond(k); c[b] = num(e.target.value); c.on = c.lo != null || c.hi != null ? 1 : 0; paint(e.target); run();
+    });
+    el.querySelector(".sw input").addEventListener("change", e=>{ cond(k).on = e.target.checked ? 1 : 0; paint(); run(); });
+  });
+  $("#mkts").addEventListener("click", e=>{
+    const c = e.target.closest(".chip"); if(!c) return;
+    const m = c.dataset.m; S.m = S.m.includes(m) ? S.m.filter(x=>x!==m) : S.m.concat(m);
+    paint(); run();
+  });
+  $("#q").addEventListener("input", e=>{ S.q = e.target.value.trim(); run(); });
+  $("#sec").addEventListener("change", e=>{ S.sec = e.target.value; secPick = ""; run(); });
+  $("#secs").addEventListener("click", e=>{ const s = e.target.closest("span"); if(!s) return; secPick = secPick === s.dataset.s ? "" : s.dataset.s; run(); });
+  $("#presets").addEventListener("click", e=>{
+    const b = e.target.closest(".preset"); if(!b) return;
+    S.c = clone(PRESETS[+b.dataset.i][1]);
+    if(Object.keys(S.c).some(k=>!MAIN.some(c=>c.k===k))) $("#adv").open = true;
+    paint(); run();
+  });
+  $("#th").addEventListener("click", e=>{
+    const th = e.target.closest("th"); if(!th) return;
+    const k = th.dataset.k;
+    if(S.sort === k) S.asc = S.asc ? 0 : 1;
+    else { S.sort = k; S.asc = MK[k] ? (MK[k].pos || ["de","po","h52"].includes(k) ? 1 : 0) : 1; }
+    paint(); run();
+  });
+  $("#sortm").addEventListener("change", e=>{ const [k,a] = e.target.value.split(":"); S.sort = k; S.asc = +a; run(); });
+  $("#more").addEventListener("click", ()=>{ shown += 200; render(); });
+  $("#csv").addEventListener("click", csv);
+  const th = store.get("scr_theme"); if(th) document.documentElement.dataset.theme = th;
+  $("#theme").addEventListener("click", ()=>{
+    const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    const nx = cur === "light" ? "dark" : "light"; document.documentElement.dataset.theme = nx; store.set("scr_theme", nx);
+  });
+  if(Object.keys(S.c).some(k=>S.c[k].on && !MAIN.some(c=>c.k===k))) $("#adv").open = true;
 }
 
 function pass(r){
   if(!S.m.includes(r.mkt)) return false;
   if(S.sec && r.sec !== S.sec) return false;
-  for(const k in SPEC){
-    const [v, on] = S.c[k]; if(!on) continue;
-    const x = r[k]; if(x == null) return false;
-    const t = v / SPEC[k].f;
-    if(SPEC[k].op === "le" ? !(x <= t && x > 0) : !(x >= t)) return false;
+  for(const k in S.c){
+    const c = S.c[k]; if(!c.on || (c.lo == null && c.hi == null) || !MK[k]) continue;
+    const v = r[k]; if(v == null) return false;
+    const x = v * MK[k].f;
+    if(c.lo != null && x < c.lo) return false;
+    if(c.hi != null && (x > c.hi || (MK[k].pos && x <= 0))) return false;
   }
-  if(S.q){ const q = S.q.normalize("NFKC").toLowerCase(); if(!(r.code.includes(q) || r.name.toLowerCase().includes(q))) return false; }
+  if(S.q){ const q = S.q.normalize("NFKC").toLowerCase(); if(!(r.code.toLowerCase().includes(q) || r.name.toLowerCase().includes(q))) return false; }
   return true;
 }
 
@@ -276,36 +378,44 @@ function run(reset = true){
     return (x - y) * dir;
   });
   $("#cnt").innerHTML = HITS.length.toLocaleString() + "<small>銘柄</small>";
-  $("#cntsub").textContent = `全${ROWS.length.toLocaleString()}銘柄中` + (secPick ? `（${secPick}のみ表示・業種タグで解除）` : "");
-  const secs = Object.entries(bySec).sort((a,b)=>b[1]-a[1]);
-  $("#secs").innerHTML = secs.slice(0, 18).map(([s,n])=>`<span data-s="${esc(s)}" class="${s===secPick?"on":""}">${esc(s||"不明")}<b>${n}</b></span>`).join("");
+  $("#cntsub").textContent = `全${ROWS.length.toLocaleString()}銘柄中` + (secPick ? `（${secPick}のみ・業種タグで解除）` : "");
+  $("#secs").innerHTML = Object.entries(bySec).sort((a,b)=>b[1]-a[1]).slice(0, 18)
+    .map(([s,n])=>`<span data-s="${esc(s)}" class="${s===secPick?"on":""}">${esc(s||"不明")}<b>${n}</b></span>`).join("");
   render();
   saveState();
 }
 
-const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const yurl = c => `https://finance.yahoo.co.jp/quote/${c}.T`;
-function cls(k, v){
-  const c = S.c[k]; if(!c || !c[1] || v == null) return "";
-  return "good";
+// 表示列：基本列＋オンにした条件＋並べ替え中の指標
+function cols(){
+  const extra = Object.keys(S.c).filter(k=>S.c[k].on && MK[k] && !CORE.includes(k));
+  if(MK[S.sort] && !CORE.includes(S.sort) && !extra.includes(S.sort)) extra.push(S.sort);
+  return CORE.concat(extra);
 }
+const yurl = c => `https://finance.yahoo.co.jp/quote/${c}.T`;
+const cls = (k, v) => v == null ? "na" : (S.c[k] && S.c[k].on ? "good" : (v < 0 && MK[k] && MK[k].u === "%" ? "neg" : ""));
 
 function render(){
-  $("#th").innerHTML = COLS.map(c=>`<th data-k="${c.k}" class="${c.l?"l":""} ${S.sort===c.k?"s"+(S.asc?" asc":""):""}">${c.t}</th>`).join("");
+  const C = cols();
+  const lab = k => k === "px" ? "株価" : MK[k].t;
+  $("#th").innerHTML = `<th class="l ${S.sort==="name"?"s asc":""}" data-k="name">銘柄</th>` +
+    C.map(k=>`<th data-k="${k}" class="${S.sort===k?"s"+(S.asc?" asc":""):""} ${!CORE.includes(k)?"x":""}" title="${MK[k]?esc(MK[k].x):""}">${lab(k)}</th>`).join("");
   const list = HITS.slice(0, shown);
+  const none = `条件に合う銘柄がありません。条件をゆるめてみてください。`;
   if(!list.length){
-    $("#tb").innerHTML = `<tr><td colspan="${COLS.length}" class="empty">条件に合う銘柄がありません。条件をゆるめてみてください。</td></tr>`;
-    $("#cards").innerHTML = `<div class="empty">条件に合う銘柄がありません。条件をゆるめてみてください。</div>`;
+    $("#tb").innerHTML = `<tr><td colspan="${C.length+1}" class="empty">${none}</td></tr>`;
+    $("#cards").innerHTML = `<div class="empty">${none}</div>`;
   } else {
     $("#tb").innerHTML = list.map(r=>`<tr>
-      <td class="l"><span class="cd num">${r.code}</span><a class="nm" href="${yurl(r.code)}" target="_blank" rel="noopener">${esc(r.name)}</a></td>
-      <td class="l"><span class="mkt">${r.mkt}</span></td><td class="l" style="color:var(--sub);font-size:12.5px">${esc(r.sec)}</td>
-      ${["px","pbr","roe","eqr","per","dy","mc"].map(k=>`<td class="num ${r[k]==null?"na":cls(k,r[k])}">${fmt[k](r[k])}</td>`).join("")}
+      <td class="l"><span class="cd num">${r.code}</span><a class="nm" href="${yurl(r.code)}" target="_blank" rel="noopener">${esc(r.name)}</a><span class="ms">${r.mkt}・${esc(r.sec)}</span></td>
+      ${C.map(k=>`<td class="num ${k==="px"?"":cls(k,r[k])}">${fmtv(k, r[k])}</td>`).join("")}
     </tr>`).join("");
+    const G = ["pbr","roe","eqr","per","dy"].concat(C.filter(k=>!CORE.includes(k)));
+    if(G.length % 3) G.push("opm");
+    while(G.length % 3) G.push(["roa","cr","rg1"].find(k=>!G.includes(k)));
     $("#cards").innerHTML = list.map(r=>`<div class="cardx">
-      <div class="t"><a href="${yurl(r.code)}" target="_blank" rel="noopener"><span class="cd num" style="color:var(--sub);font-weight:500;margin-right:6px">${r.code}</span>${esc(r.name)}</a><span class="px num">${fmt.px(r.px)}円</span></div>
-      <div class="m">${r.mkt}・${esc(r.sec)}・時価総額 ${fmt.mc(r.mc)}</div>
-      <div class="g num">${[["pbr","PBR"],["roe","ROE"],["eqr","自己資本比率"],["per","PER"],["dy","配当利回り"],["opm","営業利益率"]].map(([k,t])=>`<div><span>${t}</span><b class="${r[k]==null?"na":cls(k,r[k])}">${fmt[k](r[k])}</b></div>`).join("")}</div>
+      <div class="t"><a href="${yurl(r.code)}" target="_blank" rel="noopener"><span class="num" style="color:var(--sub);font-weight:500;margin-right:6px">${r.code}</span>${esc(r.name)}</a><span class="px num">${fmtv("px", r.px)}円</span></div>
+      <div class="m">${r.mkt}・${esc(r.sec)}・時価総額 ${fmtv("mc", r.mc)}</div>
+      <div class="g num">${G.map(k=>`<div><span>${MK[k].t}</span><b class="${cls(k,r[k])}">${fmtv(k, r[k])}</b></div>`).join("")}</div>
     </div>`).join("");
   }
   $("#more").hidden = HITS.length <= shown;
@@ -313,51 +423,17 @@ function render(){
 }
 
 function csv(){
-  const head = ["コード","銘柄名","市場","業種","株価","PBR","ROE(%)","自己資本比率(%)","PER","配当利回り(%)","時価総額(億円)","営業利益率(%)","決算期","取得日"];
-  const p = v => v==null ? "" : v;
-  const pc = v => v==null ? "" : (v*100).toFixed(2);
-  const lines = [head.join(",")].concat(HITS.map(r=>[r.code, '"'+r.name.replace(/"/g,'""')+'"', r.mkt, r.sec, p(r.px), p(r.pbr), pc(r.roe), pc(r.eqr), p(r.per), pc(r.dy), r.mc==null?"":Math.round(r.mc/1e8), pc(r.opm), p(r.fy), p(r.at)].join(",")));
+  const head = ["コード","銘柄名","市場","業種","株価"].concat(M.map(m=>m.t + (m.u ? `(${m.u})` : "")), ["決算期","取得日"]);
+  const q = s => '"' + String(s ?? "").replace(/"/g,'""') + '"';
+  const lines = [head.map(q).join(",")].concat(HITS.map(r=>[r.code, r.name, r.mkt, r.sec, r.px]
+    .concat(M.map(m=>r[m.k] == null ? "" : +(r[m.k] * m.f).toFixed(Math.max(m.d, 2))), [r.fy, r.at]).map(q).join(",")));
   const blob = new Blob(["﻿" + lines.join("\r\n")], {type:"text/csv"});
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `screen_${new Date().toISOString().slice(0,10)}.csv`; a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
 }
 
-function initUI(){
-  $("#mkts").innerHTML = MKTS.map(m=>`<span class="chip" data-m="${m}">${m}</span>`).join("");
-  $("#mkts").addEventListener("click", e=>{
-    const c = e.target.closest(".chip"); if(!c) return;
-    const m = c.dataset.m; S.m = S.m.includes(m) ? S.m.filter(x=>x!==m) : S.m.concat(m);
-    paintAll(); run();
-  });
-  $("#q").addEventListener("input", e=>{ S.q = e.target.value.trim(); run(); });
-  $("#sec").addEventListener("change", e=>{ S.sec = e.target.value; secPick = ""; run(); });
-  $("#secs").addEventListener("click", e=>{ const s = e.target.closest("span"); if(!s) return; secPick = secPick === s.dataset.s ? "" : s.dataset.s; run(); });
-  document.querySelectorAll(".preset").forEach(b=>b.addEventListener("click", ()=>{
-    S.c = JSON.parse(JSON.stringify(PRESETS[b.dataset.p])); paintAll(); run();
-    if(["per","dy","mc","opm"].some(k=>S.c[k][1])) $("#adv").open = true;
-  }));
-  $("#th").addEventListener("click", e=>{
-    const th = e.target.closest("th"); if(!th) return;
-    const k = th.dataset.k;
-    if(S.sort === k) S.asc = S.asc ? 0 : 1; else { S.sort = k; S.asc = ["pbr","per","name","mkt","sec"].includes(k) ? 1 : 0; }
-    $("#sortm").value = S.sort + ":" + S.asc; run();
-  });
-  const opts = [["pbr:1","PBRが低い順"],["roe:0","ROEが高い順"],["eqr:0","自己資本比率が高い順"],["per:1","PERが低い順"],["dy:0","配当利回りが高い順"],["mc:0","時価総額が大きい順"],["opm:0","営業利益率が高い順"],["name:1","名前順"]];
-  $("#sortm").innerHTML = opts.map(([v,t])=>`<option value="${v}">${t}</option>`).join("");
-  $("#sortm").value = S.sort + ":" + S.asc;
-  $("#sortm").addEventListener("change", e=>{ const [k,a] = e.target.value.split(":"); S.sort = k; S.asc = +a; run(); });
-  $("#more").addEventListener("click", ()=>{ shown += 200; render(); });
-  $("#csv").addEventListener("click", csv);
-  const th = store.get("scr_theme"); if(th) document.documentElement.dataset.theme = th;
-  $("#theme").addEventListener("click", ()=>{
-    const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
-    const nx = cur === "light" ? "dark" : "light"; document.documentElement.dataset.theme = nx; store.set("scr_theme", nx);
-  });
-  bindConds(); paintAll();
-}
-
 async function boot(){
-  loadState(); initUI();
+  loadState(); buildUI(); bind(); paint();
   try{
     const r = await fetch("data.json", {cache:"no-cache"});
     const d = await r.json();
