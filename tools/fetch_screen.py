@@ -6,8 +6,8 @@ import pandas as pd, requests, yfinance as yf
 OUT = sys.argv[1] if len(sys.argv) > 1 else "data/screen.json"
 LIMIT = int(os.environ.get("LIMIT", "0"))  # テスト用に銘柄数を絞る
 COLS = ["code", "name", "mkt", "sec", "px", "mc", "pbr", "roe", "eqr", "per", "dy", "opm", "fy", "at",
-        "fpe", "psr", "ev", "peg", "ncr", "kncr", "roa", "npm", "gpm", "cr", "de", "rg1", "rg3", "og1", "ng1", "po", "dgy", "dny", "h52", "r1y", "beta"]
-INFO = {"fpe": "forwardPE", "psr": "priceToSalesTrailing12Months", "ev": "enterpriseToEbitda", "peg": "trailingPegRatio", "roa": "returnOnAssets",
+        "fpe", "psr", "ev", "ncr", "kncr", "roa", "npm", "gpm", "cr", "de", "rg1", "rg3", "og1", "ng1", "po", "dgy", "dny", "h52", "r1y", "beta"]
+INFO = {"fpe": "forwardPE", "psr": "priceToSalesTrailing12Months", "ev": "enterpriseToEbitda", "roa": "returnOnAssets",
         "npm": "profitMargins", "gpm": "grossMargins", "cr": "currentRatio", "po": "payoutRatio", "r1y": "52WeekChange", "beta": "beta"}
 
 def jpx_list():
@@ -60,6 +60,8 @@ def fetch(code):
             mc = info.get("marketCap")
             r = {"px": px, "mc": mc, "per": info.get("trailingPE"), "opm": info.get("operatingMargins"), "roe": info.get("returnOnEquity")}
             for k, src in INFO.items(): r[k] = info.get(src)
+            for k in ("npm", "gpm"):  # Yahoo は欠損を 0 で返すことがある
+                if r[k] == 0: r[k] = None
             if info.get("debtToEquity") is not None: r["de"] = info["debtToEquity"] / 100
             if px and info.get("fiftyTwoWeekHigh"): r["h52"] = px / info["fiftyTwoWeekHigh"] - 1
             bps = info.get("bookValue")
@@ -94,7 +96,7 @@ def fetch(code):
             time.sleep(30 * (attempt + 1) if ("Too Many" in msg or "Rate" in msg or "401" in msg) else 2)
     return None
 
-DEC = {"px": 1, "pbr": 2, "per": 2, "fpe": 2, "psr": 2, "ev": 2, "peg": 2, "cr": 2, "de": 2, "beta": 2}
+DEC = {"px": 1, "pbr": 2, "per": 2, "fpe": 2, "psr": 2, "ev": 2, "cr": 2, "de": 2, "beta": 2}
 def rnd(v, k):
     if v is None or isinstance(v, str): return None
     try: v = float(v)
