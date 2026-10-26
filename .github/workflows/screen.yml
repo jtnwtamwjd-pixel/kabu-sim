@@ -17,7 +17,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: pip install yfinance pandas openpyxl xlrd requests
-      - run: python tools/fetch_screen.py data/screen.json
+      - run: python tools/fetch_screen.py data/screen.json 2>&1 | tee screen.log; exit ${PIPESTATUS[0]}
+        shell: bash
         env: { LIMIT: "${{ inputs.limit || '0' }}" }
       - if: ${{ (inputs.limit || '0') == '0' }}
         run: |
@@ -26,6 +27,13 @@ jobs:
           git add data/screen.json
           git commit -qm "screen $(date +%F)" || exit 0
           git pull -q --rebase && git push
+      - if: ${{ always() && (inputs.limit || '0') != '0' }}
+        run: |   # テスト実行の結果は screen-test ブランチに置く
+          git config user.name github-actions
+          git config user.email github-actions@users.noreply.github.com
+          git checkout -q -B screen-test
+          git add -f screen.log data/screen.json || git add -f screen.log
+          git commit -qm "test $(date +%F)" && git push -f origin screen-test
       - if: ${{ always() && (inputs.limit || '0') == '0' }}
         run: gh workflow run update.yml -R ${{ github.repository }}
         env: { GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
