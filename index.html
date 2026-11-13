@@ -1,0 +1,1125 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>兜町トレーダー</title>
+<meta name="theme-color" content="#07090f">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07090f;--bg2:#0c1018;--card:rgba(255,255,255,.035);--card2:rgba(255,255,255,.06);--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
+  --tx:#f2f5fa;--sub:#8a93a6;--mute:#5b6476;
+  --up:#ff4d6d;--dn:#18d18c;--upbg:rgba(255,77,109,.14);--dnbg:rgba(24,209,140,.13);
+  --acc:#8b7bff;--acc2:#3ed6ff;--gold:#ffc65c;--blue:#4cc3ff;
+  --grad:linear-gradient(120deg,#8b7bff 0%,#3ed6ff 100%);
+  --r:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:"Inter","Noto Sans JP",-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic UI",sans-serif;font-size:15px;letter-spacing:.01em}
+body{min-height:100vh;overscroll-behavior:none;background:
+  radial-gradient(900px 500px at 85% -10%,rgba(139,123,255,.16),transparent 60%),
+  radial-gradient(700px 420px at -10% 10%,rgba(62,214,255,.10),transparent 60%),var(--bg);background-attachment:fixed}
+button{font:inherit;color:inherit;border:1px solid var(--line);background:var(--card2);border-radius:12px;padding:10px 12px;cursor:pointer;transition:background .15s,transform .08s,border-color .15s}
+button:hover{border-color:var(--line2)}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.35;pointer-events:none}
+input,select{font:inherit;color:var(--tx);background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;padding:9px 10px;outline:none}
+input:focus{border-color:var(--acc)}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.up{color:var(--up)}.dn{color:var(--dn)}.sub{color:var(--sub)}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+.hide{display:none!important}
+.glass{background:var(--card);border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+/* menu */
+#menu{padding-bottom:48px}
+.logo{padding:34px 2px 4px;display:flex;align-items:center;gap:12px}
+.logo .mk{width:46px;height:46px;border-radius:14px;background:var(--grad);display:grid;place-items:center;box-shadow:0 8px 30px rgba(139,123,255,.35)}
+.logo .mk svg{width:26px;height:26px}
+.logo h1{margin:0;font-size:25px;font-weight:800;letter-spacing:.04em}
+.logo h1 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.logo p{margin:2px 0 0;color:var(--sub);font-size:12.5px}
+.ticker{overflow:hidden;white-space:nowrap;margin:16px -16px 6px;padding:8px 0;font-size:12.5px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.ticker div{display:inline-block;animation:tick 80s linear infinite;padding-left:100%}
+@keyframes tick{to{transform:translateX(-100%)}}
+.hero{padding:16px;margin-top:12px;display:flex;align-items:center;gap:10px}
+.hero .lb{font-size:12px;color:var(--sub)}
+.hero .v{font-size:26px;font-weight:800;letter-spacing:-.01em}
+.sec-t{margin:26px 4px 10px;font-size:12px;color:var(--sub);letter-spacing:.14em;font-weight:600;text-transform:uppercase}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.scn{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;position:relative;overflow:hidden}
+.scn:hover{background:var(--card2)}
+.scn b{font-size:15.5px;font-weight:700}.scn .d{color:var(--sub);font-size:12.5px;margin-top:5px;line-height:1.55}
+.scn .r{float:right;font-size:12px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(255,198,92,.12);color:var(--gold)}
+.scn.feat{border:1px solid transparent;background:linear-gradient(var(--bg2),var(--bg2)) padding-box,var(--grad) border-box}
+.scn.feat::after{content:"";position:absolute;right:-40px;top:-40px;width:140px;height:140px;background:radial-gradient(closest-side,rgba(139,123,255,.35),transparent);pointer-events:none}
+.scn.vs{border:1px solid transparent;background:linear-gradient(#120d1c,#0d0f1a) padding-box,linear-gradient(120deg,#ff4d6d,#ffc65c) border-box}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid2 .scn{margin:0}
+.row{display:flex;gap:8px;align-items:center}
+.grow{flex:1;min-width:0}
+/* game header */
+#hdr{position:sticky;top:0;z-index:5;background:rgba(7,9,15,.78);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--line);padding:10px 0 8px}
+#hdr .top{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--sub);gap:8px}
+#hdr .top .pill{padding:3px 9px;border-radius:20px;background:var(--card2);border:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hdr .eq{font-size:30px;font-weight:800;letter-spacing:-.02em;margin-top:4px;line-height:1.1}
+#hdr .st{display:flex;gap:6px;font-size:12px;margin-top:8px;flex-wrap:wrap}
+#hdr .st span{padding:4px 9px;border-radius:10px;background:var(--card);border:1px solid var(--line);color:var(--sub)}
+#hdr .st b{color:var(--tx);font-weight:700;margin-left:3px}
+#hdr .st b.up{color:var(--up)}#hdr .st b.dn{color:var(--dn)}
+.icon-btn{width:40px;height:40px;padding:0;border-radius:12px;display:grid;place-items:center;font-size:18px}
+.prog{height:3px;background:var(--line);border-radius:2px;margin-top:9px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--grad);transition:width .3s}
+.tabs{display:flex;gap:4px;margin:12px 0 10px;padding:4px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.tabs button{flex:1;padding:8px 2px;font-size:13px;background:transparent;border:0;border-radius:10px;color:var(--sub);font-weight:600}
+.tabs button.on{background:var(--card2);color:var(--tx);box-shadow:inset 0 0 0 1px var(--line2)}
+#main{padding-bottom:130px}
+.list{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.list .it{display:flex;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);gap:10px;cursor:pointer}
+.list .it:last-child{border-bottom:0}
+.list .it:hover{background:rgba(255,255,255,.025)}
+.it .av{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-size:11px;font-weight:800;flex:none;color:#fff;letter-spacing:-.02em}
+.it .nm{flex:1;min-width:0}
+.it .nm b{display:block;font-size:14.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it .nm small{color:var(--sub);font-size:11.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it canvas.sp{width:58px;height:26px;flex:none}
+.it .px{text-align:right;min-width:86px}
+.it .px b{display:block;font-size:15px;font-weight:700}
+.chg{display:inline-block;margin-top:3px;padding:2px 7px;border-radius:7px;font-size:12px;font-weight:700}
+.chg.up{background:var(--upbg)}.chg.dn{background:var(--dnbg)}.chg:not(.up):not(.dn){background:var(--card2);color:var(--sub)}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;background:rgba(255,198,92,.14);color:var(--gold);margin-left:6px;vertical-align:2px}
+.badge.s{background:rgba(76,195,255,.14);color:var(--blue)}
+.idx{padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:12px}
+.idx canvas{width:90px;height:34px}
+.ctl{position:fixed;left:0;right:0;bottom:0;z-index:6;padding:0 0 calc(12px + env(safe-area-inset-bottom));pointer-events:none}
+.ctl .wrap{display:flex;gap:6px;padding:7px;background:rgba(18,22,32,.82);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line2);border-radius:20px;box-shadow:0 12px 40px rgba(0,0,0,.5);pointer-events:auto;max-width:728px;margin:0 auto;width:calc(100% - 24px)}
+.ctl button{flex:1;padding:13px 2px;font-size:14px;font-weight:700;border:0;background:rgba(255,255,255,.06);border-radius:14px}
+.ctl .play{background:var(--grad);color:#0a0a14}
+.ctl .play.on{background:rgba(255,255,255,.12);color:var(--tx)}
+.ctl .info{flex:2;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--sub);font-weight:600}
+.sortbar{display:flex;gap:6px;overflow-x:auto;padding:0 0 10px;scrollbar-width:none}
+.sortbar::-webkit-scrollbar{display:none}
+.sortbar button{padding:6px 12px;font-size:12.5px;border-radius:20px;white-space:nowrap;color:var(--sub);background:transparent}
+.sortbar button.on{background:var(--tx);color:#0a0a14;border-color:var(--tx);font-weight:700}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;font-size:13px}
+.kv div{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:8px 0}
+.kv span{color:var(--sub)}
+.news{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.news .n{padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px;line-height:1.55}
+.news .n:last-child{border-bottom:0}
+.news .n small{color:var(--mute);display:block;font-size:11px;margin-bottom:2px}
+.news .n.big{border-left:3px solid var(--gold)}
+.news .n.me{border-left:3px solid var(--acc)}
+/* sheet */
+.sheet{position:fixed;inset:0;z-index:20;background:rgba(2,3,8,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;animation:fade .18s}
+@keyframes fade{from{opacity:0}}
+@keyframes rise{from{transform:translateY(40px);opacity:.4}}
+.sheet .in{background:linear-gradient(180deg,#121624,#0a0d15);border:1px solid var(--line2);border-bottom:0;border-radius:26px 26px 0 0;width:100%;max-width:760px;max-height:94vh;overflow:auto;padding:0 16px calc(22px + env(safe-area-inset-bottom));animation:rise .22s cubic-bezier(.2,.8,.2,1);box-shadow:0 -20px 60px rgba(0,0,0,.5)}
+.sh-top{position:sticky;top:0;z-index:3;margin:0 -16px 6px;padding:8px 12px 10px 16px;background:linear-gradient(180deg,#121624 80%,rgba(18,22,36,0));display:flex;align-items:center;gap:10px}
+.sh-top .grab{position:absolute;left:50%;top:6px;transform:translateX(-50%);width:40px;height:4px;background:var(--line2);border-radius:3px}
+.sh-top .ttl{flex:1;min-width:0;padding-top:12px}
+.sh-top h2{margin:0;font-size:19px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sh-top .s2{color:var(--sub);font-size:12px}
+.xbtn{flex:none;margin-top:12px;width:48px;height:48px;border-radius:50%;padding:0;display:grid;place-items:center;background:rgba(255,255,255,.1);border:1px solid var(--line2);font-size:0}
+.xbtn svg{width:20px;height:20px}
+.xbtn:active{background:rgba(255,255,255,.2)}
+.rng{display:flex;gap:2px;margin:10px 0;padding:3px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.rng button{flex:1;padding:6px 0;font-size:12px;border:0;background:transparent;color:var(--sub);border-radius:9px;font-weight:600}
+.rng button.on{background:var(--card2);color:var(--tx);box-shadow:inset 0 0 0 1px var(--line2)}
+canvas{display:block;width:100%;touch-action:none}
+.trade{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-top:14px}
+.seg{display:flex;background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:13px;padding:3px;gap:3px}
+.seg button{flex:1;padding:9px 2px;font-size:13.5px;background:transparent;border:0;border-radius:10px;color:var(--sub);font-weight:600}
+.seg button.on.b{background:var(--up);color:#fff}
+.seg button.on.s{background:var(--dn);color:#04140d}
+.seg button.on.x{background:var(--blue);color:#04121a}
+.qty{display:flex;gap:6px;align-items:center;margin:12px 0 8px}
+.qty input{flex:1;text-align:center;font-size:20px;font-weight:800;min-width:0;padding:10px 4px}
+.qty button{padding:12px 0;width:50px;font-size:12.5px;font-weight:700}
+.pcts{display:flex;gap:6px;margin-bottom:8px}
+.pcts button{flex:1;padding:7px 0;font-size:12px;font-weight:700;color:var(--sub)}
+.go{width:100%;padding:15px;font-size:16px;font-weight:800;margin-top:10px;border:0;border-radius:15px}
+.go.b{background:linear-gradient(120deg,#ff4d6d,#ff7a59);color:#fff;box-shadow:0 8px 26px rgba(255,77,109,.3)}
+.go.s{background:linear-gradient(120deg,#18d18c,#3ed6c0);color:#04140d;box-shadow:0 8px 26px rgba(24,209,140,.25)}
+.go.x{background:linear-gradient(120deg,#4cc3ff,#8b7bff);color:#06101c}
+.go.pri{background:var(--grad);color:#0a0a14;box-shadow:0 8px 30px rgba(139,123,255,.35)}
+.go.ghost{background:var(--card2);border:1px solid var(--line)}
+.opt{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);gap:10px}
+.opt>span{font-size:14px;white-space:nowrap}
+.opt .seg{min-width:0;flex:0 1 230px}
+.opt .seg button{padding:7px 2px;font-size:12.5px}
+.opt .seg button.on{background:var(--tx);color:#0a0a14}
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(22,26,38,.92);backdrop-filter:blur(14px);border:1px solid var(--line2);color:var(--tx);padding:11px 16px;border-radius:14px;max-width:92vw;width:max-content;font-size:13.5px;box-shadow:0 12px 40px rgba(0,0,0,.5);transition:opacity .3s}
+.big-n{font-size:40px;font-weight:900;text-align:center;margin:6px 0 2px;letter-spacing:-.02em}
+.rank{font-size:76px;font-weight:900;text-align:center;line-height:1;margin-top:4px;letter-spacing:-.04em}
+.legend{display:flex;gap:14px;font-size:11.5px;color:var(--sub);margin:4px 0 8px}
+.legend i{display:inline-block;width:12px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+table.tr{width:100%;border-collapse:collapse;font-size:12.5px}
+table.tr td{padding:9px 6px;border-bottom:1px solid var(--line)}
+.help p{line-height:1.75;font-size:14px;margin:8px 0}
+.note{font-size:11.5px;color:var(--sub);line-height:1.65}
+/* online */
+.code{font-size:44px;font-weight:900;letter-spacing:.18em;text-align:center;margin:6px 0;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pl{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line)}
+.pl:last-child{border-bottom:0}
+.pl .rk{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;background:var(--card2);flex:none}
+.pl.me{background:rgba(139,123,255,.08);border-radius:12px}
+.pl .rk.g1{background:linear-gradient(135deg,#ffd76b,#ff9f43);color:#1a1200}
+.pl .rk.g2{background:linear-gradient(135deg,#e8edf5,#9aa6b8);color:#11151c}
+.pl .rk.g3{background:linear-gradient(135deg,#f0a36b,#a8582b);color:#1a0d04}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--dn);margin-right:6px;box-shadow:0 0 10px var(--dn)}
+.dot.off{background:var(--mute);box-shadow:none}
+.mini-board{display:flex;gap:6px;overflow-x:auto;margin-top:8px;scrollbar-width:none}
+.mini-board::-webkit-scrollbar{display:none}
+.mini-board span{flex:none;font-size:11.5px;padding:4px 9px;border-radius:10px;background:var(--card);border:1px solid var(--line);color:var(--sub)}
+.mini-board span.me{border-color:var(--acc);color:var(--tx)}
+
+.search{display:flex;gap:8px;margin-bottom:10px}
+.search input{flex:1;min-width:0}
+.search select{flex:0 0 38%;min-width:0}
+.cnt{font-size:11.5px;margin:0 4px 6px}
+.seg.scope button.on{background:var(--tx);color:#0a0a14}
+.loading{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(7,9,15,.72);backdrop-filter:blur(6px);color:var(--sub);font-size:14px}
+.spin{width:38px;height:38px;border-radius:50%;border:3px solid var(--line2);border-top-color:var(--acc2);animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.co{margin-top:12px}
+.co .desc{font-size:13.5px;line-height:1.75;margin:8px 0 6px;color:#d4dae4}
+.note a{color:var(--acc2);text-decoration:none}
+.scrbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.scrbar button{padding:7px 12px;font-size:12.5px;border-radius:20px;font-weight:700}
+.scrbar button.on{background:var(--grad);color:#0a0a14;border:0}
+.scrbar .clr{background:transparent;color:var(--sub)}
+.tag{font-size:12px;padding:5px 6px 5px 10px;border-radius:20px;background:rgba(139,123,255,.14);color:#cfc8ff;display:inline-flex;align-items:center;gap:4px}
+.tag i{font-style:normal;cursor:pointer;width:18px;height:18px;display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.1);font-size:10px}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+.presets button{font-size:13px;padding:8px 12px;border-radius:20px}
+</style>
+</head>
+<body>
+<div id="menu" class="wrap"></div>
+<div id="game" class="hide">
+  <div id="hdr"><div class="wrap" id="hdrIn"></div></div>
+  <div class="wrap" id="main"></div>
+  <div class="ctl"><div class="wrap" id="ctl"></div></div>
+</div>
+<div id="sheet" class="sheet hide"><div class="in" id="sheetIn"></div></div>
+<div id="toast" class="toast hide"></div>
+
+<script id="pricedata" type="application/json">null</script>
+<script>
+'use strict';
+// ---------- 銘柄マスタ ----------
+const LEGACY_META={
+ N225:['日経平均株価','指数'],
+ '1306':['TOPIX連動型ETF','ETF'],
+ '7203':['トヨタ自動車','輸送用機器'],'6758':['ソニーグループ','電気機器'],'9984':['ソフトバンクグループ','情報・通信'],
+ '6861':['キーエンス','電気機器'],'8306':['三菱UFJフィナンシャルG','銀行'],'9432':['NTT','情報・通信'],
+ '6501':['日立製作所','電気機器'],'8035':['東京エレクトロン','電気機器'],'9983':['ファーストリテイリング','小売'],
+ '7974':['任天堂','その他製品'],'4063':['信越化学工業','化学'],'6098':['リクルートHD','サービス'],
+ '8058':['三菱商事','卸売'],'4502':['武田薬品工業','医薬品'],'7267':['本田技研工業','輸送用機器'],
+ '9433':['KDDI','情報・通信'],'6920':['レーザーテック','電気機器'],'7011':['三菱重工業','機械'],
+ '9101':['日本郵船','海運'],'2914':['JT','食料品'],'4661':['オリエンタルランド','サービス'],
+ '6594':['ニデック','電気機器'],'8001':['伊藤忠商事','卸売'],'6367':['ダイキン工業','機械'],
+ '4568':['第一三共','医薬品'],'7741':['HOYA','精密機器'],'3382':['セブン&アイHD','小売'],
+ '9201':['日本航空','空運'],'8316':['三井住友フィナンシャルG','銀行'],'6702':['富士通','電気機器'],
+ '7201':['日産自動車','輸送用機器'],'4755':['楽天グループ','サービス'],'2802':['味の素','食料品'],
+ '6752':['パナソニックHD','電気機器'],'9020':['JR東日本','陸運'],'8766':['東京海上HD','保険'],
+ '5401':['日本製鉄','鉄鋼'],'6857':['アドバンテスト','電気機器'],'4385':['メルカリ','情報・通信'],
+ '3659':['ネクソン','情報・通信'],'2413':['エムスリー','サービス'],'6146':['ディスコ','機械'],
+ '7832':['バンダイナムコHD','その他製品'],'9766':['コナミグループ','情報・通信']
+};
+// ---------- 実際の出来事 ----------
+const EVENTS=[
+ ['2001-09-12','米同時多発テロの翌営業日。世界の株式市場が急落',1],
+ ['2003-04-28','日経平均がバブル後最安値（当時）7,607円を記録'],
+ ['2005-09-12','郵政選挙で自民党が圧勝。外国人買いで「小泉相場」が加速'],
+ ['2006-01-17','ライブドアに東京地検の強制捜査。新興株を中心に急落（ライブドア・ショック）',1],
+ ['2007-02-28','中国株急落をきっかけに世界同時株安（上海ショック）'],
+ ['2007-08-10','仏BNPパリバ傘下ファンドの解約凍結でサブプライム問題が表面化'],
+ ['2008-09-16','米リーマン・ブラザーズが経営破綻。世界的な金融危機へ',1],
+ ['2008-10-27','日経平均が7,162円まで下落、26年ぶりの安値',1],
+ ['2009-03-10','日経平均がバブル後最安値7,054円（終値）を記録'],
+ ['2009-08-31','衆院選で民主党が圧勝し政権交代'],
+ ['2011-03-11','東日本大震災が発生（14時46分）',1],
+ ['2011-03-15','原発事故への懸念から日経平均が1,015円安、下落率10.6%',1],
+ ['2011-10-31','円相場が戦後最高値の1ドル=75円台。政府・日銀が円売り介入'],
+ ['2012-11-15','野田首相が衆院解散を表明。円安・株高の「アベノミクス相場」が始まる',1],
+ ['2012-12-17','衆院選で自民党が圧勝、第2次安倍政権へ'],
+ ['2013-04-04','日銀・黒田総裁が「異次元緩和」を発表',1],
+ ['2013-05-23','日経平均が1,143円の急落'],
+ ['2014-10-31','日銀が追加金融緩和を発表（黒田バズーカ第2弾）',1],
+ ['2015-08-24','中国経済の減速懸念から世界同時株安（チャイナ・ショック）'],
+ ['2016-01-29','日銀がマイナス金利政策の導入を決定'],
+ ['2016-06-24','英国の国民投票でEU離脱派が勝利。日経平均は1,286円安',1],
+ ['2016-11-09','米大統領選でトランプ氏が勝利'],
+ ['2018-02-06','米国株急落（VIXショック）を受け日経平均が1,071円安'],
+ ['2018-12-25','米国株安が波及し日経平均が1,010円安、2万円割れ'],
+ ['2019-05-07','「令和」最初の取引日'],
+ ['2020-01-31','WHOが新型コロナウイルスについて緊急事態を宣言'],
+ ['2020-03-19','日経平均がコロナショックの底値16,552円をつける',1],
+ ['2020-04-07','政府が7都府県に緊急事態宣言を発令'],
+ ['2020-11-10','米ファイザーがワクチンの高い有効性を発表し株価急騰',1],
+ ['2021-02-15','日経平均が30年半ぶりに3万円台を回復'],
+ ['2022-02-24','ロシアがウクライナへ侵攻',1],
+ ['2022-12-20','日銀が長期金利の変動幅を拡大、事実上の利上げと受け止められる'],
+ ['2023-03-13','米シリコンバレー銀行の破綻を受け金融不安が広がる'],
+ ['2024-02-22','日経平均が39,098円となり、バブル期を超えて34年ぶりに史上最高値を更新',1],
+ ['2024-03-04','日経平均が初めて4万円台に乗せる'],
+ ['2024-03-19','日銀がマイナス金利政策を解除'],
+ ['2024-07-11','日経平均が終値で史上最高値42,224円を記録'],
+ ['2024-08-05','日経平均が4,451円安、ブラックマンデーを超える過去最大の下げ幅',1],
+ ['2024-08-06','日経平均が3,217円高、過去最大の上げ幅',1],
+ ['2024-11-06','米大統領選でトランプ氏が勝利'],
+ ['2025-04-07','米国の相互関税発表を受け日経平均が2,644円安',1],
+ ['2025-10-06','高市早苗氏の自民党総裁選出を受け日経平均が2,175円高',1]
+];
+// ---------- シナリオ ----------
+const SCN=[
+ {id:'recent',name:'直近1年',d:'最新の終値までの約1年間。いまの相場に一番近い腕試し。',rel:245},
+ {id:'random',name:'🎲 ランダム1年',d:'2001年以降のどこかの1年間。ブラインドにすると銘柄名と日付が隠れて、後知恵が効きません。',random:250},
+ {id:'it',name:'ITバブル崩壊',d:'2000年春の天井から2003年4月の大底まで。ハイテク株が崩れていく中で資産を守れるか。',from:'2000-04-03',to:'2003-04-30'},
+ {id:'koizumi',name:'小泉・郵政相場',d:'2003年の大底から2006年まで。日本株が大きく戻した上昇相場。',from:'2003-04-28',to:'2006-04-28'},
+ {id:'lehman',name:'リーマンショック',d:'2007年夏のサブプライム問題から2009年3月の大底まで。',from:'2007-07-02',to:'2009-03-31'},
+ {id:'quake',name:'東日本大震災',d:'2011年の1年間。震災と超円高を乗り切る。',from:'2011-01-04',to:'2011-12-30'},
+ {id:'abe',name:'アベノミクス',d:'2012年11月の解散表明から2015年夏まで。円安・株高の波に乗れ。',from:'2012-11-01',to:'2015-08-31'},
+ {id:'covid',name:'コロナショック',d:'2020年の1年間。暴落と、その後のV字回復。',from:'2020-01-06',to:'2020-12-30'},
+ {id:'peak',name:'最高値更新と令和のブラックマンデー',d:'2023年10月〜2024年末。34年ぶりの最高値と、史上最大の暴落・暴騰。',from:'2023-10-02',to:'2024-12-30'},
+ {id:'last3',name:'直近3年',d:'最新の終値までの約3年間。長期戦。',rel:735},
+ {id:'free',name:'フリー',d:'開始日と期間を自分で決める。',free:1}
+];
+// ---------- データ ----------
+// M: 全期間の目次（暦・日経平均・銘柄一覧）、D: いま遊んでいる期間の株価、DL: 最新1年（メニュー用）
+let M=null,D=null,DL=null;const CH={};
+function decDelta(str,out,off){let p=0;const ds=str.split(',');for(let i=0;i<ds.length;i++){if(ds[i])p+=parseInt(ds[i],16);out[off+i]=p/10}return ds.length}
+function buildCal(d0,dd){const dates=[d0];let t=Date.parse(d0+'T00:00:00Z');for(let i=0;i<dd.length;i++){t+=(dd.charCodeAt(i)-48)*864e5;dates.push(new Date(t).toISOString().slice(0,10))}return dates}
+function initManifest(R){
+  const dates=buildCal(R.d0,R.dd),n=dates.length;
+  const n225=new Float64Array(n).fill(NaN);decDelta(R.n225,n225,0);
+  const meta={},codes=[],main=[];
+  for(const [c,nm,sec,f,mn] of R.meta){meta[c]={n:nm,s:sec||'その他',f,main:!!mn};codes.push(c);if(mn)main.push(c)}
+  for(const k in CH)delete CH[k];
+  M={v:2,dates,n,last:n-1,years:R.years,n225,meta,codes,main,ev:buildEvents(dates,n225)};
+}
+function initLegacy(R){ // 埋め込みの主要銘柄データ（オフライン用）
+  const dates=buildCal(R.d0,R.dd),n=dates.length;const meta={},codes=[],main=[];let n225;
+  const ch={i0:0,i1:n-1,P:{},DIV:{}};
+  for(const x of R.t){const a=new Float32Array(n).fill(NaN);decDelta(x.p,a,x.s);const dv={};for(const [i,v] of x.dv)dv[x.s+i]=v/100;
+    if(x.c==='N225'){n225=Float64Array.from(a);continue}
+    if(!LEGACY_META[x.c]||x.c==='1306')continue;ch.P[x.c]=a;ch.DIV[x.c]=dv;meta[x.c]={n:LEGACY_META[x.c][0],s:LEGACY_META[x.c][1],f:x.s,main:true};codes.push(x.c);main.push(x.c)}
+  codes.sort();
+  M={v:1,dates,n,last:n-1,years:{ALL:[0,n-1]},n225,meta,codes,main,ev:buildEvents(dates,n225)};CH.ALL=ch;
+}
+function buildEvents(dates,N){
+  const ev={};for(const e of EVENTS){const i=idxOf(dates,e[0]);if(i>=0&&dates[i]>=e[0])(ev[i]=ev[i]||[]).push({t:e[1],big:!!e[2]});}
+  let hi=0;
+  for(let i=1;i<dates.length;i++){
+    const r=N[i]/N[i-1]-1;
+    if(Math.abs(r)>=0.04&&!ev[i])ev[i]=[{t:`日経平均が${r>0?'急騰':'急落'}、前日比${r>0?'+':''}${(r*100).toFixed(1)}%（${fmt(N[i])}円）`,big:Math.abs(r)>=0.06}];
+    if(N[i]>hi&&N[i-1]<hi&&N[i]>38915.87&&!ev[i])ev[i]=[{t:`日経平均が終値で史上最高値を更新（${fmt(N[i])}円）`}];
+    if(N[i]>=40000&&Math.floor(N[i]/1e4)*1e4>hi&&!ev[i])ev[i]=[{t:`日経平均が初めて${Math.floor(N[i]/1e4)}万円台に乗せる`}];
+    if(N[i]>hi)hi=N[i];
+  }
+  const out={};for(const i in ev)out[dates[i]]=ev[i];return out;
+}
+async function fetchChunk(y){
+  if(CH[y])return CH[y];
+  const r=await fetch(`y/${y}.json`);if(!r.ok)throw new Error('株価データを読み込めませんでした');
+  const R=await r.json();const len=R.i1-R.i0+1;const ch={i0:R.i0,i1:R.i1,P:{},DIV:{}};
+  for(const [c,s,p] of R.t){const a=new Float32Array(len).fill(NaN);decDelta(p,a,s);ch.P[c]=a}
+  for(const c in R.dv){const o={};for(const [i,v] of R.dv[c])o[R.i0+i]=v/100;ch.DIV[c]=o}
+  return CH[y]=ch;
+}
+async function loadWindow(a,b){
+  a=Math.max(0,a);b=Math.min(M.last,b);
+  const ys=Object.keys(M.years).filter(y=>M.years[y][1]>=a&&M.years[y][0]<=b);
+  const need=ys.filter(y=>!CH[y]).length;if(need)loading(true,`株価データを読み込み中…（${need}年分）`);
+  let chs;try{chs=await Promise.all(ys.map(fetchChunk))}finally{loading(false)}
+  const n=b-a+1,P={},DIV={};
+  for(const ch of chs){
+    const lo=Math.max(a,ch.i0),hi=Math.min(b,ch.i1);
+    for(const c in ch.P){const arr=P[c]||(P[c]=new Float32Array(n).fill(NaN));const src=ch.P[c];for(let g=lo;g<=hi;g++)arr[g-a]=src[g-ch.i0]}
+    for(const c in ch.DIV){const o=DIV[c]||(DIV[c]={});for(const g in ch.DIV[c]){if(g>=a&&g<=b)o[g-a]=ch.DIV[c][g]}}
+  }
+  P.N225=M.n225.subarray(a,b+1);
+  const dates=M.dates.slice(a,b+1),codes=M.codes.filter(c=>P[c]&&!P[c].every(v=>v!==v));
+  for(const c of codes)if(!DIV[c])DIV[c]={};
+  const ev={};dates.forEach((d,i)=>{if(M.ev[d])ev[i]=M.ev[d]});
+  return {a,b,dates,n,P,DIV,codes,ev,last:n-1};
+}
+function loading(on,msg){let el=$('loading');if(!el){el=document.createElement('div');el.id='loading';el.className='loading hide';document.body.appendChild(el)}el.innerHTML=`<div class="spin"></div><div>${msg||'読み込み中…'}</div>`;el.classList.toggle('hide',!on)}
+async function useWindow(a,b){try{D=await loadWindow(a,b);return true}catch(e){toast('⚠️ '+e.message+'。通信状況を確認してください',4000);return false}}
+function gIdx(d){return idxOf(M.dates,d)}
+function idxOf(dates,s){let lo=0,hi=dates.length-1;if(s<=dates[0])return 0;if(s>dates[hi])return hi;while(lo<hi){const m=(lo+hi)>>1;if(dates[m]<s)lo=m+1;else hi=m;}return lo}
+// ---------- 表示ユーティリティ ----------
+const $=id=>document.getElementById(id);
+function fmt(v,d=0){if(!isFinite(v))return '—';return v.toLocaleString('ja-JP',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function pxf(v){if(!isFinite(v))return '—';return fmt(v,v%1!==0?1:0)}
+function yen(v){const s=v<0?'-':'';v=Math.abs(v);if(v>=1e12)return s+(v/1e12).toFixed(v>=1e13?1:2)+'兆円';if(v>=1e8)return s+(v/1e8).toFixed(v>=1e10?1:2)+'億円';if(v>=1e6)return s+fmt(v/1e4)+'万円';return s+fmt(Math.round(v))+'円'}
+function pct(v,d=2){if(!isFinite(v))return '—';return (v>0?'+':'')+(v*100).toFixed(d)+'%'}
+function cls(v){return v>0?'up':v<0?'dn':''}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function toast(msg,ms=2600){const t=$('toast');t.innerHTML=msg;t.classList.remove('hide');t.style.opacity=1;clearTimeout(toast.h);toast.h=setTimeout(()=>{t.style.opacity=0;setTimeout(()=>t.classList.add('hide'),300)},ms)}
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const X_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const SEC_C={'輸送用機器':'#ff6b6b','電気機器':'#5b8cff','情報・通信':'#8b7bff','銀行':'#2bb3a3','小売':'#ff9f43','その他製品':'#e056fd','化学':'#26c6da','サービス':'#f368e0','卸売':'#feca57','医薬品':'#1dd1a1','機械':'#54a0ff','海運':'#0abde3','食料品':'#ff9ff3','精密機器':'#48dbfb','空運':'#00d2d3','陸運':'#10ac84','保険':'#5f27cd','鉄鋼':'#8395a7','ETF':'#c8d6e5','指数':'#c8d6e5'};
+function secColor(sec){if(SEC_C[sec])return SEC_C[sec];let h=0;for(const ch of sec)h=(h*31+ch.charCodeAt(0))%360;return `hsl(${h},62%,58%)`}
+function avatar(c){const sec=M.meta[c].s,col=secColor(sec);const t=G&&G.set.blind?sec.slice(0,1):M.meta[c].n.replace(/^[（(].*?[)）]/,'').slice(0,2);return `<div class="av" style="background:linear-gradient(135deg,${col},color-mix(in srgb,${col} 45%,transparent))">${esc(t)}</div>`}
+
+// ---------- ゲーム状態 ----------
+const FEE=0.001, SHORT_RATE=0.011, MARGIN_MIN=0.3, SHORT_LEV=2;
+let G=null, UI={tab:'mkt',sort:'code',detail:null,range:'6M',side:'buy',play:0,timer:null};
+function px(c,i=G.day){return D.P[c]?D.P[c][i]:NaN}
+function listed(c,i=G.day){return isFinite(px(c,i))}
+function nameOf(c){if(G&&G.set.blind){if(c==='N225')return '市場平均';return '銘柄'+G.alias[c]}return c==='N225'?'日経平均株価':M.meta[c].n}
+function codeLabel(c){return G&&G.set.blind?M.meta[c].s:c+' · '+M.meta[c].s}
+function dateLabel(i){return G&&G.set.blind?`Day ${i-G.start+1}`:D.dates[i]}
+function equity(i=G.day){let e=G.cash;for(const c in G.pos)e+=G.pos[c].q*px(c,i);return e}
+function longVal(){let v=0;for(const c in G.pos)if(G.pos[c].q>0)v+=G.pos[c].q*px(c);return v}
+function shortVal(){let v=0;for(const c in G.pos)if(G.pos[c].q<0)v+=-G.pos[c].q*px(c);return v}
+function buyPower(){return Math.max(0,G.cash-shortVal())}
+function shortRoom(){return Math.max(0,equity()*SHORT_LEV-shortVal())}
+function bench(i=G.day){return D.P.N225[i]/D.P.N225[G.start]-1}
+function makeAlias(seed){let x=seed>>>0||1;const rnd=()=>{x^=x<<13;x>>>=0;x^=x>>>17;x^=x<<5;x>>>=0;return x/4294967296};const sh=M.codes.slice();for(let i=sh.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[sh[i],sh[j]]=[sh[j],sh[i]]}const alias={};sh.forEach((c,k)=>alias[c]=String(k+1).padStart(4,'0'));return alias}
+const newSeed=()=>Math.floor(Math.random()*2**31)+1;const LOOKBACK=735;
+function scnRange(sc,set){
+  let s,e;
+  if(sc.rel){e=M.last;s=Math.max(0,e-sc.rel)}
+  else if(sc.random){const len=set.len||sc.random;const lo=gIdx('2001-01-04');s=lo+Math.floor(Math.random()*(M.last-len-lo));e=s+len}
+  else if(sc.free){s=gIdx(set.from);e=Math.min(M.last,s+set.len)}
+  else{s=gIdx(sc.from);e=Math.min(M.last,gIdx(sc.to))}
+  return [s,e];
+}
+function blankGame(mode,scn,name,s,e,set,alias){
+  return {mode,scn,scnName:name,start:s,end:e,day:s,cash:set.cap,init:set.cap,pos:{},hist:[[s,set.cap]],trades:[],news:[],set,alias:alias||{},divs:0,fees:0,realized:0};
+}
+async function newGame(sc,set){
+  const [gs,ge]=scnRange(sc,set);
+  if(!await useWindow(gs-LOOKBACK,ge))return false;
+  const s=gs-D.a,e=ge-D.a,seed=newSeed();
+  G=blankGame('scn',sc.id,sc.name,s,e,set,makeAlias(seed));G.aseed=seed;
+  pushNews(s);saveGame();return true;
+}
+async function newLive(cap){
+  if(!await useWindow(M.last-LOOKBACK,M.last))return false;
+  const s=D.last;G=blankGame('live','live','リアル口座',s,Infinity,{cap,fee:1,unit:100,short:1,blind:0},{});G.startDate=D.dates[s];saveGame();return true;
+}
+function saveGame(){
+  if(!G||G.mode==='pvp')return;
+  const o=Object.assign({},G,{startDate:D.dates[G.start],dayDate:D.dates[G.day],endDate:isFinite(G.end)?D.dates[G.end]:null,hist:G.hist.map(h=>[D.dates[h[0]],h[1]]),trades:G.trades.map(t=>Object.assign({},t,{i:D.dates[t.i]})),news:G.news.map(n=>Object.assign({},n,{i:D.dates[n.i]}))});
+  if(o.aseed)delete o.alias;
+  LS.set(G.mode==='live'?'kabu_live':'kabu_scn',o);
+}
+function loadGame(key){
+  const o=LS.get(key,null);if(!o)return null;
+  const f=d=>idxOf(D.dates,d);
+  if(o.aseed)o.alias=makeAlias(o.aseed);else o.alias=o.alias||{};
+  o.start=f(o.startDate);o.day=f(o.dayDate);o.end=o.endDate?f(o.endDate):Infinity;
+  o.hist=o.hist.map(h=>[f(h[0]),h[1]]);o.trades=o.trades.map(t=>Object.assign(t,{i:f(t.i)}));o.news=o.news.map(n=>Object.assign(n,{i:f(n.i)}));
+  return o;
+}
+function pushNews(i){const e=D.ev[i];if(!e)return null;let big=null;for(const x of e){G.news.unshift({i,t:x.t,big:x.big});if(x.big)big=x}return big||e[0]}
+
+// 1営業日進める
+function stepDay(){
+  if(G.day>=G.end)return false;
+  const prev=G.day,i=++G.day;
+  const cd=(Date.parse(D.dates[i])-Date.parse(D.dates[prev]))/864e5;
+  for(const c in G.pos){
+    const p=G.pos[c],dv=D.DIV[c][i];
+    if(dv){const amt=p.q*dv;G.cash+=amt;G.divs+=amt;G.news.unshift({i,t:`${nameOf(c)}の配当${p.q>0?'を受け取り':'相当額（配当落調整金）を支払い'}：${yen(Math.abs(amt))}（1株${dv}円）`,me:1});}
+    if(!isFinite(px(c,i))){const last=px(c,prev);G.cash+=p.q*last;delete G.pos[c];}
+  }
+  const sv=shortVal();
+  if(sv>0){const f=sv*SHORT_RATE*cd/365;G.cash-=f;G.fees+=f;}
+  let msg=null;
+  if(sv>0&&equity()<sv*MARGIN_MIN){
+    for(const c in G.pos)if(G.pos[c].q<0)doTrade(c,'cover',-G.pos[c].q,true);
+    msg='⚠️ 委託保証金率が30%を下回ったため、空売りを強制決済しました';G.news.unshift({i,t:msg,big:true,me:1});
+  }
+  G.hist.push([i,equity()]);
+  const ev=G.set.blind?null:pushNews(i);
+  return {ev,msg};
+}
+
+function doTrade(c,side,q,forced){
+  const p=px(c);if(!isFinite(p)||q<=0)return '株価がありません';
+  const amt=p*q,fee=G.set.fee?Math.round(amt*FEE):0;
+  const pos=G.pos[c]||{q:0,cost:0};
+  if(side==='buy'){
+    if(pos.q<0)return '空売り中の銘柄は「返済買い」で決済してください';
+    if(amt+fee>buyPower()+1e-6)return '買付余力が足りません';
+    pos.cost=(pos.cost*pos.q+amt)/(pos.q+q);pos.q+=q;G.cash-=amt+fee;
+  }else if(side==='sell'){
+    if(pos.q<q)return '保有株数が足りません';
+    const pl=(p-pos.cost)*q-fee;G.realized+=pl;pos.q-=q;G.cash+=amt-fee;
+  }else if(side==='short'){
+    if(pos.q>0)return '保有中の銘柄は空売りできません（先に売却）';
+    if(!forced&&amt>shortRoom()+1e-6)return '信用余力が足りません';
+    pos.cost=(pos.cost*(-pos.q)+amt)/(-pos.q+q);pos.q-=q;G.cash+=amt-fee;
+  }else if(side==='cover'){
+    if(-pos.q<q)return '空売り株数が足りません';
+    const pl=(pos.cost-p)*q-fee;G.realized+=pl;pos.q+=q;G.cash-=amt+fee;
+  }
+  G.fees+=fee;
+  if(pos.q===0)delete G.pos[c];else G.pos[c]=pos;
+  G.trades.unshift({i:G.day,c,side,q,p,fee,forced:!!forced});
+  G.hist[G.hist.length-1]=[G.day,equity()];
+  saveGame();
+  if(G.mode==='pvp')netReportEq();
+  return null;
+}
+
+// ---------- チャート ----------
+function setupCanvas(cv,h){const dpr=window.devicePixelRatio||1;const w=cv.clientWidth||cv.parentNode.clientWidth;cv.width=w*dpr;cv.height=h*dpr;cv.style.height=h+'px';const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);return {x,w,h}}
+function drawChart(cv,o,hover){
+  const {x,w,h}=setupCanvas(cv,o.h||220);const padR=o.padR==null?58:o.padR,padB=o.padB==null?20:o.padB,padT=8;
+  const cw=w-padR,ch=h-padB-padT;
+  let mn=Infinity,mx=-Infinity;
+  for(const L of o.lines)for(let i=o.i0;i<=o.i1;i++){const v=L.v[i];if(isFinite(v)){if(v<mn)mn=v;if(v>mx)mx=v}}
+  if(o.ref!=null&&isFinite(o.ref)){mn=Math.min(mn,o.ref);mx=Math.max(mx,o.ref)}
+  if(!isFinite(mn)){x.fillStyle='#8a93a6';x.fillText('データなし',10,20);return}
+  if(mx===mn){mx+=1;mn-=1}
+  const pad=(mx-mn)*.08;mn-=pad;mx+=pad;
+  const N=o.i1-o.i0||1;
+  const X=i=>(i-o.i0)/N*cw,Y=v=>padT+(1-(v-mn)/(mx-mn))*ch;
+  x.font='500 10.5px Inter,sans-serif';x.lineWidth=1;x.fillStyle='#5b6476';x.textBaseline='middle';
+  if(!o.bare){
+    for(let k=0;k<=3;k++){const v=mn+(mx-mn)*(k+.5)/4,y=Y(v);x.strokeStyle='rgba(255,255,255,.05)';x.setLineDash([2,4]);x.beginPath();x.moveTo(0,y);x.lineTo(cw,y);x.stroke();x.setLineDash([]);x.fillText(o.yf?o.yf(v):fmt(v),cw+6,y)}
+    x.textBaseline='alphabetic';
+    [o.i0,Math.round((o.i0+o.i1)/2),o.i1].forEach(i=>{const s=o.xf(i);const tw=x.measureText(s).width;x.fillText(s,Math.min(Math.max(0,X(i)-tw/2),cw-tw),h-4)});
+  }
+  if(o.ref!=null&&isFinite(o.ref)){x.setLineDash([4,4]);x.strokeStyle='rgba(255,198,92,.7)';x.beginPath();x.moveTo(0,Y(o.ref));x.lineTo(cw,Y(o.ref));x.stroke();x.setLineDash([])}
+  for(const L of o.lines){
+    x.strokeStyle=L.color;x.lineWidth=L.w||1.8;x.lineJoin='round';x.beginPath();let st=false,fx=null;
+    const step=Math.max(1,Math.floor(N/(cw*1.5)));
+    for(let i=o.i0;i<=o.i1;i+=(i+step>o.i1&&i<o.i1)?(o.i1-i):step){const v=L.v[i];if(!isFinite(v)){st=false;continue}const px_=X(i),py=Y(v);if(!st){x.moveTo(px_,py);st=true;if(fx==null)fx=px_}else x.lineTo(px_,py)}
+    x.stroke();
+    if(L.fill&&fx!=null){x.lineTo(cw,padT+ch);x.lineTo(fx,padT+ch);x.closePath();const g=x.createLinearGradient(0,padT,0,padT+ch);g.addColorStop(0,L.fill);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fill()}
+  }
+  if(o.dotEnd){const L=o.lines[o.lines.length-1],v=L.v[o.i1];if(isFinite(v)){x.fillStyle=L.color;x.beginPath();x.arc(X(o.i1),Y(v),3.2,0,7);x.fill();x.globalAlpha=.25;x.beginPath();x.arc(X(o.i1),Y(v),7,0,7);x.fill();x.globalAlpha=1}}
+  if(o.marks)for(const m of o.marks){if(m.i<o.i0||m.i>o.i1)continue;const v=o.lines[0].v[m.i];if(!isFinite(v))continue;x.fillStyle=m.c;x.beginPath();const yy=Y(v);if(m.up){x.moveTo(X(m.i),yy+4);x.lineTo(X(m.i)-5,yy+12);x.lineTo(X(m.i)+5,yy+12)}else{x.moveTo(X(m.i),yy-4);x.lineTo(X(m.i)-5,yy-12);x.lineTo(X(m.i)+5,yy-12)}x.fill()}
+  if(hover!=null&&!o.bare){
+    const i=Math.max(o.i0,Math.min(o.i1,hover));x.strokeStyle='rgba(255,255,255,.35)';x.beginPath();x.moveTo(X(i),padT);x.lineTo(X(i),padT+ch);x.stroke();
+    const rows=[o.xf(i)].concat(o.lines.filter(L=>L.label).map(L=>L.label+' '+(o.yf?o.yf(L.v[i]):pxf(L.v[i]))));
+    x.font='600 12px Inter,sans-serif';const bw=Math.max(...rows.map(r=>x.measureText(r).width))+16,bh=rows.length*17+8;
+    let bx=X(i)+10;if(bx+bw>cw)bx=X(i)-bw-10;x.fillStyle='rgba(18,22,34,.95)';x.strokeStyle='rgba(255,255,255,.14)';x.beginPath();x.roundRect?x.roundRect(bx,padT+2,bw,bh,8):x.rect(bx,padT+2,bw,bh);x.fill();x.stroke();
+    x.fillStyle='#f2f5fa';rows.forEach((r,k)=>x.fillText(r,bx+8,padT+19+k*17));
+  }
+  if(!cv._bound&&!o.bare){cv._bound=1;const mv=e=>{const r=cv.getBoundingClientRect();const cx=(e.touches?e.touches[0].clientX:e.clientX)-r.left;const oo=cv._o;const NN=oo.i1-oo.i0||1;drawChart(cv,oo,Math.round(oo.i0+cx/(r.width-58)*NN))};
+    cv.addEventListener('pointermove',mv);cv.addEventListener('pointerdown',mv);cv.addEventListener('pointerleave',()=>drawChart(cv,cv._o));cv.addEventListener('pointerup',e=>{if(e.pointerType!=='mouse')drawChart(cv,cv._o)})}
+  cv._o=o;
+}
+function spark(cv,arr,i0,i1){const up=arr[i1]>=arr[i0];drawChart(cv,{h:cv.clientHeight||26,i0,i1,lines:[{v:arr,color:up?'#ff4d6d':'#18d18c',w:1.5,fill:up?'rgba(255,77,109,.22)':'rgba(24,209,140,.2)'}],bare:1,padR:0,padB:0,xf:()=>''})}
+function firstFinite(v,a,b){for(let i=a;i<=b;i++)if(isFinite(v[i]))return i;return a}
+function sma(arr,n,i0,i1){const out=new Float64Array(arr.length).fill(NaN);for(let i=i0;i<=i1;i++){let s=0,k=0;for(let j=i-n+1;j<=i;j++){if(j>=0&&isFinite(arr[j])){s+=arr[j];k++}}if(k===n)out[i]=s/n}return out}
+function drawSparks(){document.querySelectorAll('canvas.sp').forEach(cv=>{const c=cv.dataset.c;const DD=G?D:DL;const P=DD.P[c];const i1=G?G.day:DD.last;spark(cv,P,Math.max(firstFinite(P,0,i1),i1-21),i1)})}
+
+// ---------- シート ----------
+function openSheet(body,title,sub,cls_){
+  const s=$('sheet'),wasOpen=!s.classList.contains('hide');const keep=wasOpen?$('sheetIn').scrollTop:0;
+  $('sheetIn').innerHTML=`<div class="sh-top" id="shTop"><div class="grab"></div><div class="ttl">${title?`<h2>${title}</h2>`:''}${sub?`<div class="s2">${sub}</div>`:''}</div><button class="xbtn" aria-label="閉じる" onclick="closeSheet()">${X_SVG}</button></div>${body}`;
+  $('sheetIn').className='in'+(cls_?' '+cls_:'');
+  if(wasOpen)$('sheetIn').style.animation='none';else $('sheetIn').style.animation='';
+  s.classList.remove('hide');$('sheetIn').scrollTop=keep;document.body.style.overflow='hidden';
+  bindSwipe();
+}
+function closeSheet(){$('sheet').classList.add('hide');UI.detail=null;document.body.style.overflow='';if(UI.onClose){const f=UI.onClose;UI.onClose=null;f()}}
+$('sheet').addEventListener('click',e=>{if(e.target.id==='sheet')closeSheet()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('sheet').classList.contains('hide'))closeSheet()});
+function bindSwipe(){
+  const top=$('shTop'),inn=$('sheetIn');let y0=null,dy=0;
+  top.addEventListener('touchstart',e=>{if(inn.scrollTop>0)return;y0=e.touches[0].clientY;dy=0;inn.style.transition='none'},{passive:true});
+  top.addEventListener('touchmove',e=>{if(y0==null)return;dy=Math.max(0,e.touches[0].clientY-y0);inn.style.transform=`translateY(${dy}px)`},{passive:true});
+  top.addEventListener('touchend',()=>{if(y0==null)return;inn.style.transition='transform .2s';if(dy>90){closeSheet()}inn.style.transform='';y0=null});
+}
+
+// ---------- メニュー ----------
+const LOGO='<svg viewBox="0 0 24 24" fill="none" stroke="#0a0a14" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 8-8"/><path d="M15 7h5v5"/></svg>';
+function renderMenu(){
+  stopPlay();$('game').classList.add('hide');$('menu').classList.remove('hide');
+  const rec=LS.get('kabu_rec',{}),save=LS.get('kabu_scn',null),live=LS.get('kabu_live',null);
+  const N=M.n225,L=M.last;
+  const tk=['N225',...M.main.filter(c=>DL.P[c])].map(c=>{const a=DL.P[c][DL.last],b=DL.P[c][DL.last-1];return `<span style="color:#c9d1dc">${c==='N225'?'日経平均':M.meta[c].n}</span> <b class="num ${cls(a-b)}">${pxf(a)} ${pct(a/b-1)}</b>`}).join('<span style="color:#2a3040">　•　</span>');
+  let h=`<div class="logo"><div class="mk">${LOGO}</div><div><h1>兜町<span>トレーダー</span></h1><p>実際の東証株価で遊ぶ投資シミュレーション</p></div></div>
+  <div class="ticker"><div>${tk}</div></div>
+  <div class="glass hero"><div class="grow"><div class="lb">日経平均株価 ・ ${M.dates[L]} 終値</div><div class="v num">${fmt(N[L],2)}</div><span class="chg ${cls(N[L]-N[L-1])} num">${pct(N[L]/N[L-1]-1)}</span></div><canvas id="mN" style="width:48%;height:74px"></canvas></div>`;
+  if(save&&!save.done)h+=`<div class="sec-t">続きから</div><button class="scn feat" onclick="resume()"><b>▶ ${esc(save.scnName)}</b><span class="r">${pct(save.hist[save.hist.length-1][1]/save.init-1,1)}</span><div class="d">${save.set.blind?'ブラインド':esc(save.dayDate)} 時点 ・ 総資産 ${yen(save.hist[save.hist.length-1][1])}</div></button>`;
+  h+=`<div class="sec-t">オンライン</div><button class="scn vs" onclick="onlineSheet()"><b>⚔️ オンライン対戦</b><div class="d">ルームを作って友だちと同じ相場で資産を競う。時間は全員同時に進みます。</div></button>`;
+  h+=`<div class="sec-t">最新相場で運用</div>`;
+  if(live){const lg=loadGame('kabu_live');const eq=liveEquity(lg);h+=`<button class="scn feat" onclick="openLive()"><b>📡 リアル口座</b><span class="r">${pct(eq/lg.init-1)}</span><div class="d">${esc(lg.startDate)} 開設 ・ 総資産 ${yen(eq)}<br>最新の終値が反映されるたびに資産が動きます</div></button>`}
+  else h+=`<button class="scn feat" onclick="liveSetup()"><b>📡 リアル口座を開設</b><div class="d">${M.dates[L]} の終値からスタート。毎営業日の終値更新とともに、あなたのポートフォリオも本物の相場と一緒に動きます。</div></button>`;
+  h+=`<div class="sec-t">過去の相場に挑戦</div>`;
+  for(const s of SCN){const r=rec[s.id];h+=`<button class="scn" onclick="setup('${s.id}')"><b>${s.name}</b>${r?`<span class="r">${r.rank} ${pct(r.ret,1)}</span>`:''}<div class="d">${s.d}${s.from?`<br><span style="color:var(--mute)">${s.from} 〜 ${s.to}</span>`:''}</div></button>`}
+  h+=`<div class="sec-t">その他</div><div class="row"><button class="grow" onclick="showHelp()">遊び方</button><button class="grow" onclick="showRecords()">成績</button></div>
+  <p class="note" style="margin-top:20px">株価：東京証券取引所 上場銘柄の日次終値（株式分割調整済み、Yahoo Finance 経由で取得）。2000年1月〜${M.dates[L]}（${M.v===2?'東証プライム全'+M.codes.length+'銘柄':'主要'+M.codes.length+'銘柄'}）。ゲーム内の取引はすべて仮想で、実際の売買は行われません。投資助言ではありません。</p>`;
+  $('menu').innerHTML=h;
+  drawChart($('mN'),{h:74,i0:L-245,i1:L,lines:[{v:N,color:N[L]>=N[L-245]?'#ff4d6d':'#18d18c',w:1.8,fill:N[L]>=N[L-245]?'rgba(255,77,109,.25)':'rgba(24,209,140,.22)'}],bare:1,padR:4,padB:4,dotEnd:1,xf:()=>''});
+  window.scrollTo(0,0);
+}
+function liveEquity(lg){let e=lg.cash;for(const c in lg.pos)e+=lg.pos[c].q*(DL.P[c]?DL.P[c][DL.last]:lg.pos[c].cost);return e}
+function segOpt(S,k,label,vals){return `<div class="opt"><span>${label}</span><div class="seg" data-k="${k}">${vals.map(([v,t])=>`<button class="${S[k]==v?'on':''}" data-v="${v}">${t}</button>`).join('')}</div></div>`}
+function bindSegs(S,root,cb){root.querySelectorAll('.seg[data-k]').forEach(sg=>sg.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;sg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');S[sg.dataset.k]=isNaN(+b.dataset.v)?b.dataset.v:+b.dataset.v;cb&&cb(sg.dataset.k)}))}
+function setup(id){
+  const sc=SCN.find(s=>s.id===id);const last=LS.get('kabu_set',{cap:10000000,fee:1,unit:100,short:1,blind:0});
+  if(LS.get('kabu_scn',null)&&!LS.get('kabu_scn').done&&!confirm('進行中のゲームは上書きされます。よろしいですか？'))return;
+  const S=Object.assign({},last,{blind:id==='random'?last.blind:0,from:'2008-01-04',len:245});
+  let h=`<p class="sub" style="font-size:13px;margin:0 0 6px;line-height:1.6">${sc.d}</p>`;
+  if(sc.free)h+=`<div class="opt"><span>開始日</span><input type="date" id="fFrom" value="${S.from}" min="${M.dates[0]}" max="${M.dates[M.last-20]}"></div>`+segOpt(S,'len','期間',[[60,'3ヶ月'],[125,'半年'],[245,'1年'],[735,'3年']]);
+  h+=segOpt(S,'cap','初期資金',[[1000000,'100万'],[3000000,'300万'],[10000000,'1000万'],[100000000,'1億']])
+   +segOpt(S,'unit','売買単位',[[100,'100株'],[1,'1株']])
+   +segOpt(S,'fee','手数料',[[1,'0.1%'],[0,'無料']])
+   +segOpt(S,'short','空売り',[[1,'あり'],[0,'なし']])
+   +segOpt(S,'blind','ブラインド',[[0,'オフ'],[1,'オン']])
+   +`<p class="note">ブラインド：銘柄名・日付・ニュースを隠します（業種と株価は表示）。売買はその日の終値で約定します。</p>
+   <button class="go pri" id="startBtn">スタート</button>`;
+  openSheet(h,sc.name);
+  bindSegs(S,$('sheetIn'));
+  $('startBtn').onclick=()=>{if(sc.free)S.from=$('fFrom').value||S.from;LS.set('kabu_set',{cap:S.cap,fee:S.fee,unit:S.unit,short:S.short,blind:S.blind});closeSheet();newGame(sc,S).then(ok=>{if(ok)startGame()})};
+}
+function liveSetup(){
+  const S={cap:10000000};
+  openSheet(`<p class="sub" style="font-size:13px;line-height:1.65;margin-top:0">${M.dates[M.last]} の終値から運用を始めます。時間は自動では進まず、新しい営業日の終値データが届くたびに（毎営業日の夕方に自動更新）資産が動きます。配当も実際の権利落ち日に入金されます。</p>
+  ${segOpt(S,'cap','初期資金',[[1000000,'100万'],[3000000,'300万'],[10000000,'1000万'],[100000000,'1億']])}
+  <p class="note">売買単位100株・手数料0.1%・空売りあり。</p>
+  <button class="go pri" id="lgo">開設する</button>`,'リアル口座を開設');
+  bindSegs(S,$('sheetIn'));
+  $('lgo').onclick=()=>{closeSheet();newLive(S.cap).then(ok=>{if(ok)startGame()})};
+}
+async function openLive(){
+  const sv=LS.get('kabu_live',null);if(!sv)return;
+  if(!await useWindow(Math.min(gIdx(sv.startDate),M.last-LOOKBACK),M.last))return;
+  G=loadGame('kabu_live');
+  const before=G.day;let n=0;G.end=D.last;
+  while(G.day<D.last){stepDay();n++}
+  G.end=Infinity;saveGame();startGame();
+  if(n>0)toast(`📈 ${n}営業日分の新しい終値を反映しました（${D.dates[before]} → ${D.dates[D.last]}）`,4000);
+}
+async function resume(){const sv=LS.get('kabu_scn',null);if(!sv)return;if(!await useWindow(gIdx(sv.startDate)-LOOKBACK,gIdx(sv.endDate)))return;G=loadGame('kabu_scn');startGame()}
+function startGame(){
+  $('menu').classList.add('hide');$('game').classList.remove('hide');UI.tab='mkt';UI.q='';UI.sec='';UI.limit=40;UI.sort='code';UI.scope=null;UI.scr={};UI.detail=null;render();window.scrollTo(0,0);
+}
+
+// ---------- ゲーム画面 ----------
+function render(){renderHdr();renderMain();renderCtl()}
+function renderHdr(){
+  const eq=equity(),r=eq/G.init-1,b=bench();
+  const live=G.mode==='live',pvp=G.mode==='pvp';
+  const prog=live?100:(G.day-G.start)/(G.end-G.start)*100;
+  const dPrev=G.hist.length>1?G.hist[G.hist.length-2][1]:G.init;
+  const when=live?'📡 '+D.dates[G.day]+' 終値':dateLabel(G.day)+(G.set.blind?'':` (${'日月火水木金土'[new Date(D.dates[G.day]).getDay()]})`)+` ・ 残り${G.end-G.day}日`;
+  let mb='';
+  if(pvp&&NET.board.length){const rows=boardRows();mb=`<div class="mini-board">${rows.map((p,k)=>`<span class="${p.id===NET.myId?'me':''}">${k+1}. ${esc(p.name)} <b class="${cls(p.eq/G.init-1)}">${pct(p.eq/G.init-1,1)}</b></span>`).join('')}</div>`}
+  $('hdrIn').innerHTML=`<div class="top"><span class="pill">${pvp?'⚔️ ':''}${esc(G.scnName)}${G.set.blind?' 🙈':''}</span><span class="num">${when}</span></div>
+   <div class="row"><div class="eq num grow">${yen(eq)}</div><button class="icon-btn" aria-label="メニュー" onclick="menuSheet()">☰</button></div>
+   <div class="st num"><span>損益<b class="${cls(r)}">${pct(r)}</b></span><span>前日比<b class="${cls(eq-dPrev)}">${pct(eq/dPrev-1)}</b></span><span>${G.set.blind?'市場':'日経'}<b class="${cls(b)}">${pct(b)}</b></span><span>現金<b>${yen(G.cash)}</b></span></div>
+   ${mb}${live?'':`<div class="prog"><i style="width:${prog}%"></i></div>`}`;
+}
+function renderCtl(){
+  if(G.mode==='live'){$('ctl').innerHTML=`<button onclick="renderMenu()">🏠 メニュー</button><button onclick="checkUpdate(true)">🔄 最新データ確認</button>`;return}
+  if(G.mode==='pvp'){
+    if(NET.ended){$('ctl').innerHTML=`<button class="play" onclick="showPvpResult()">🏁 最終結果</button>`;return}
+    if(NET.lost){$('ctl').innerHTML=`<div class="info">ホストとの接続が切れました</div><button onclick="leaveRoom();renderMenu()">退出</button>`;return}
+    const sp=`${(NET.speed/1000).toFixed(NET.speed<1000?2:0).replace(/0$/,'')}秒/日`;
+    if(NET.host)$('ctl').innerHTML=`<button class="play ${NET.paused?'':'on'}" onclick="hostTogglePause()">${NET.paused?'▶ 再開':'⏸ 一時停止'}</button><button onclick="hostSpeed()">⏱ ${sp}</button>`;
+    else $('ctl').innerHTML=`<div class="info">${NET.paused?'⏸ ホストが一時停止中':'▶ 進行中 ・ '+sp}</div>`;
+    return;
+  }
+  const done=G.day>=G.end;
+  $('ctl').innerHTML=done?`<button class="play" onclick="finish()">🏁 結果を見る</button>`:
+   `<button onclick="adv(1)">+1日</button><button onclick="adv(5)">+1週</button><button onclick="adv(21)">+1月</button><button class="play ${UI.play?'on':''}" onclick="togglePlay()">${UI.play?'⏸ 停止':'▶ 自動'}</button>`;
+}
+function renderMain(){
+  const t=UI.tab;const tabs=[['mkt','銘柄'],['pf','保有'],['news','ニュース'],['log','取引']];if(G.mode==='pvp')tabs.splice(1,0,['rank','順位']);
+  let h=`<div class="tabs">${tabs.map(([k,n])=>`<button class="${t===k?'on':''}" onclick="setTab('${k}')">${n}${k==='pf'&&Object.keys(G.pos).length?` ${Object.keys(G.pos).length}`:''}</button>`).join('')}</div>`;
+  if(t==='mkt')h+=mktView();else if(t==='pf')h+=pfView();else if(t==='news')h+=newsView();else if(t==='rank')h+=rankView();else h+=logView();
+  $('main').innerHTML=h;
+  if(t==='pf')drawPf();
+  if(t==='mkt'){idxSpark();renderList()}
+}
+function setTab(k){UI.tab=k;renderMain();window.scrollTo(0,0)}
+function chgOf(c,n=1){const a=px(c),b=px(c,Math.max(G.day-n,0));return a/b-1}
+function idxInner(){const N=D.P.N225,i=G.day;return `<div class="grow"><div class="sub" style="font-size:11.5px">${G.set.blind?'市場平均（指数）':'日経平均株価'}</div><b class="num" style="font-size:20px">${fmt(N[i],2)}</b></div><canvas id="idxSp"></canvas><div class="num" style="text-align:right;min-width:70px"><span class="chg ${cls(N[i]-N[i-1])}">${pct(N[i]/N[i-1]-1)}</span><div class="sub" style="font-size:11px;margin-top:3px">${(N[i]-N[i-1]>0?'+':'')+fmt(N[i]-N[i-1],0)}</div></div>`}
+function idxSpark(){const cv=$('idxSp');if(cv)spark(cv,D.P.N225,Math.max(0,G.day-21),G.day)}
+function mktView(){
+  if(!UI.scope)UI.scope=M.main.length<D.codes.length?'main':'all';
+  const secs=[...new Set(D.codes.map(c=>M.meta[c].s))].sort((a,b)=>a.localeCompare(b,'ja'));
+  const nAll=D.codes.filter(c=>listed(c)).length;
+  const scopes=[['main','主要銘柄'],['all',`全銘柄 ${nAll}`],['own','保有中']];if(M.main.length>=D.codes.length)scopes.shift();
+  return `<div class="glass idx" id="idxCard" onclick="openDetail('N225')">${idxInner()}</div>
+  <div class="seg scope" style="margin-bottom:10px">${scopes.map(([k,n])=>`<button class="${UI.scope===k?'on':''}" onclick="UI.scope='${k}';UI.limit=40;renderMain()">${n}</button>`).join('')}</div>
+  <div class="search"><input id="qIn" type="search" placeholder="${G.set.blind?'番号・業種で検索':'銘柄名・コードで検索'}" value="${esc(UI.q||'')}" oninput="UI.q=this.value;UI.limit=40;renderList()"><select onchange="UI.sec=this.value;UI.limit=40;renderList()"><option value="">全業種</option>${secs.map(x=>`<option ${UI.sec===x?'selected':''}>${esc(x)}</option>`).join('')}</select></div>
+  ${scrBar()}
+  <div class="sortbar">${[['code',G.set.blind?'番号順':'コード順'],['up','値上がり'],['dn','値下がり'],['m1','1ヶ月上昇'],['m1d','1ヶ月下落'],['yld','配当利回り']].concat(PROF?[['pbr','PBR低い'],['eqr','自己資本比率'],['per','PER低い'],['roe','ROE高い'],['mc','時価総額']]:[]).map(([k,n])=>`<button class="${UI.sort===k?'on':''}" onclick="UI.sort='${k}';UI.limit=40;renderMain()">${n}</button>`).join('')}</div>
+  <div id="mlist"></div>`;
+}
+function renderList(){
+  const el=$('mlist');if(!el)return;
+  let codes=D.codes.filter(c=>listed(c));
+  if(UI.scope==='main')codes=codes.filter(c=>M.meta[c].main);else if(UI.scope==='own')codes=codes.filter(c=>G.pos[c]);
+  if(UI.sec)codes=codes.filter(c=>M.meta[c].s===UI.sec);
+  codes=applyScr(codes);
+  const q=(UI.q||'').trim().toLowerCase();
+  if(q)codes=codes.filter(c=>G.set.blind?(G.alias[c].includes(q)||M.meta[c].s.includes(q)):(c.includes(q)||M.meta[c].n.toLowerCase().includes(q)||M.meta[c].s.includes(q)));
+  const s=UI.sort;
+  if(s==='up'||s==='dn'||s==='m1'||s==='m1d'){const n=s[0]==='m'?21:1,dir=(s==='dn'||s==='m1d')?1:-1;const k={};for(const c of codes)k[c]=chgOf(c,n);codes.sort((a,b)=>dir*(k[a]-k[b]))}
+  else if(s==='yld'){const k={};for(const c of codes)k[c]=yld(c);codes.sort((a,b)=>k[b]-k[a])}
+  else if(PROF&&SCR_SORT[s]){const [f,dir]=SCR_SORT[s];const val=c=>{const v=metric(c,f);return v==null||(f==='per'&&v<=0)?null:v};codes=codes.filter(c=>val(c)!=null).sort((a,b)=>dir*(val(a)-val(b)))}
+  else if(G.set.blind)codes.sort((a,b)=>G.alias[a].localeCompare(G.alias[b]));
+  const lim=UI.limit||40,tot=codes.length;
+  let h=`<div class="cnt sub">${tot}銘柄${tot>lim?` ・ 上位${lim}件を表示`:''}</div><div class="list">`;
+  if(!tot)h+=`<p class="sub" style="text-align:center;padding:24px;margin:0">該当する銘柄はありません</p>`;
+  for(const c of codes.slice(0,lim)){
+    const p=px(c),r=s[0]==='m'?chgOf(c,21):chgOf(c),pos=G.pos[c];
+    const extra=s==='yld'?`<span class="chg">${(yld(c)*100).toFixed(2)}%</span>`:SCR_SORT[s]&&PROF?`<span class="chg">${metricLabel(c,SCR_SORT[s][0])}</span>`:`<span class="chg num ${cls(r)}">${pct(r)}</span>`;
+    h+=`<div class="it" onclick="openDetail('${c}')">${avatar(c)}<div class="nm"><b>${esc(nameOf(c))}${pos?`<span class="badge ${pos.q<0?'s':''}">${pos.q<0?'売建':'保有'}</span>`:''}</b><small>${scrActive()&&PROF?esc(G.set.blind?M.meta[c].s:c)+' ・ '+scrMini(c):esc(codeLabel(c))}</small></div><canvas class="sp" data-c="${c}"></canvas><div class="px num"><b>${pxf(p)}</b>${extra}</div></div>`;
+  }
+  h+='</div>';
+  if(tot>lim)h+=`<button class="go ghost" onclick="UI.limit+=60;renderList()">さらに表示（残り${tot-lim}銘柄）</button>`;
+  el.innerHTML=h;drawSparks();
+}
+function yld(c,i=G.day){let s=0;const dv=D.DIV[c];for(const k in dv){const j=+k;if(j<=i&&j>i-250)s+=dv[k]}return s/px(c,i)}
+function pfView(){
+  const eq=equity(),lv=longVal(),sv=shortVal();
+  let h=`<div class="card"><div class="legend"><span><i style="background:#8b7bff"></i>あなたの資産</span><span><i style="background:#ffc65c"></i>${G.set.blind?'市場平均':'日経平均'}</span></div><canvas id="pfc"></canvas></div>
+  <div class="card kv num"><div><span>総資産</span><b>${yen(eq)}</b></div><div><span>現金</span><b>${yen(G.cash)}</b></div>
+  <div><span>株式（買い）</span><b>${yen(lv)}</b></div><div><span>空売り建玉</span><b>${yen(sv)}</b></div>
+  <div><span>買付余力</span><b>${yen(buyPower())}</b></div><div><span>信用余力</span><b>${G.set.short?yen(shortRoom()):'—'}</b></div>
+  <div><span>確定損益</span><b class="${cls(G.realized)}">${yen(G.realized)}</b></div><div><span>受取配当</span><b class="${cls(G.divs)}">${yen(G.divs)}</b></div>
+  <div><span>手数料等</span><b>${yen(G.fees)}</b></div><div><span>取引回数</span><b>${G.trades.length}回</b></div></div>`;
+  const cs=Object.keys(G.pos);
+  if(!cs.length)return h+`<div class="card" style="text-align:center;padding:26px"><div style="font-size:30px">🪙</div><p class="sub" style="margin:6px 0 0">保有銘柄はありません。<br>「銘柄」タブから気になる銘柄を選んで買ってみましょう。</p></div>`;
+  h+='<div class="list">';
+  cs.sort((a,b)=>Math.abs(G.pos[b].q*px(b))-Math.abs(G.pos[a].q*px(a)));
+  for(const c of cs){const p=G.pos[c],v=p.q*px(c),pl=(px(c)-p.cost)*p.q,r=(px(c)/p.cost-1)*(p.q<0?-1:1);
+    h+=`<div class="it" onclick="openDetail('${c}')">${avatar(c)}<div class="nm"><b>${esc(nameOf(c))}<span class="badge ${p.q<0?'s':''}">${p.q<0?'空売り':'買い'}</span></b><small class="num">${fmt(Math.abs(p.q))}株 ・ 平均 ${pxf(p.cost)} ・ ${(Math.abs(v)/eq*100).toFixed(1)}%</small></div><div class="px num"><b class="${cls(pl)}">${pl>0?'+':''}${yen(pl)}</b><span class="chg ${cls(r)}">${pct(r)}</span></div></div>`}
+  return h+'</div>';
+}
+function pfLines(){const H=G.hist;return {H,eq:H.map(h=>h[1]/G.init*100-100),b:H.map(h=>bench(h[0])*100)}}
+function drawPf(){
+  const cv=$('pfc');if(!cv)return;const {H,eq,b}=pfLines();
+  drawChart(cv,{h:180,i0:0,i1:Math.max(1,H.length-1),lines:[{v:b,color:'#ffc65c',w:1.3,label:G.set.blind?'市場':'日経'},{v:eq,color:'#8b7bff',w:2.2,label:'資産',fill:'rgba(139,123,255,.25)'}],ref:0,dotEnd:1,xf:k=>H[Math.min(k,H.length-1)]?dateLabel(H[Math.min(k,H.length-1)][0]):'',yf:v=>(v>0?'+':'')+v.toFixed(1)+'%'});
+}
+function newsView(){
+  const items=G.set.blind?G.news.filter(n=>n.me):G.news;
+  const head=G.set.blind?`<p class="sub" style="padding:4px 4px 10px;margin:0;font-size:12.5px">ブラインドモードでは市場ニュースは表示されません。</p>`:'';
+  if(!items.length)return head+`<div class="card" style="text-align:center;padding:26px"><div style="font-size:28px">📰</div><p class="sub" style="margin:6px 0 0">まだニュースはありません。</p></div>`;
+  return head+'<div class="news">'+items.slice(0,150).map(n=>`<div class="n ${n.big?'big':''} ${n.me?'me':''}"><small>${dateLabel(n.i)}</small>${esc(n.t)}</div>`).join('')+'</div>';
+}
+const SIDE={buy:['買い','b'],sell:['売却','s'],short:['空売り','x'],cover:['返済買い','x']};
+function logView(){
+  if(!G.trades.length)return `<div class="card" style="text-align:center;padding:26px"><div style="font-size:28px">🧾</div><p class="sub" style="margin:6px 0 0">まだ取引はありません。</p></div>`;
+  return `<div class="card" style="padding:4px 10px"><table class="tr num">${G.trades.slice(0,200).map(t=>`<tr><td class="sub">${dateLabel(t.i)}</td><td>${esc(nameOf(t.c))}</td><td class="${t.side==='buy'||t.side==='cover'?'up':'dn'}">${SIDE[t.side][0]}${t.forced?'(強制)':''}</td><td style="text-align:right">${fmt(t.q)}株<br><span class="sub">@${pxf(t.p)}</span></td></tr>`).join('')}</table></div>`;
+}
+
+// ---------- 銘柄詳細 & 売買 ----------
+function openDetail(c){UI.detail=c;const p=G.pos[c];UI.side=p&&p.q<0?'cover':'buy';UI.qty=null;renderDetail();}
+const RANGES=[['1M',21],['3M',63],['6M',125],['1Y',245],['3Y',735],['ALL',1e9]];
+function renderDetail(){
+  const c=UI.detail;if(!c)return;
+  const P=D.P[c],i=G.day,p=P[i],pr=P[i-1],isIdx=c==='N225';
+  const i0=Math.max(firstFinite(P,0,i),i-RANGES.find(r=>r[0]===UI.range)[1]);
+  const w52=P.slice(Math.max(0,i-245),i+1).filter(isFinite);
+  const pos=G.pos[c];
+  let h=`<div class="row" style="align-items:baseline;margin-top:2px"><b class="num" style="font-size:32px;letter-spacing:-.02em">${isIdx?fmt(p,2):pxf(p)}</b><span class="chg num ${cls(p-pr)}" style="margin-left:10px;font-size:13px">${(p-pr>0?'+':'')+fmt(p-pr,isIdx?2:1)} (${pct(p/pr-1)})</span></div>
+  <div class="rng">${RANGES.map(([k])=>`<button class="${UI.range===k?'on':''}" onclick="UI.range='${k}';renderDetail()">${k}</button>`).join('')}</div>
+  <canvas id="dc"></canvas>
+  <div class="legend"><span><i style="background:${p>=P[i0]?'#ff4d6d':'#18d18c'}"></i>終値</span><span><i style="background:#ffc65c"></i>25日線</span><span><i style="background:#8b7bff"></i>75日線</span>${pos?'<span><i style="background:#ffc65c;height:1px"></i>平均取得</span>':''}</div>
+  <div class="kv num" style="margin-top:4px"><div><span>52週高値</span><b>${pxf(Math.max(...w52))}</b></div><div><span>52週安値</span><b>${pxf(Math.min(...w52))}</b></div>
+  <div><span>1ヶ月</span><b class="${cls(p/P[Math.max(0,i-21)]-1)}">${pct(p/P[Math.max(0,i-21)]-1,1)}</b></div><div><span>1年</span><b class="${cls(p/P[Math.max(0,i-245)]-1)}">${pct(p/P[Math.max(0,i-245)]-1,1)}</b></div>
+  ${isIdx?'':`<div><span>配当利回り</span><b>${(yld(c)*100).toFixed(2)}%</b></div><div><span>最低購入額</span><b>${yen(p*G.set.unit)}</b></div>`}</div>`;
+  if(!isIdx)h+=coCard(c);
+  if(!isIdx){
+    if(pos){const pl=(p-pos.cost)*pos.q;h+=`<div class="card kv num" style="margin-top:12px"><div><span>${pos.q<0?'空売り':'保有'}</span><b>${fmt(Math.abs(pos.q))}株</b></div><div><span>平均${pos.q<0?'売建':'取得'}</span><b>${pxf(pos.cost)}</b></div><div><span>評価額</span><b>${yen(Math.abs(pos.q*p))}</b></div><div><span>評価損益</span><b class="${cls(pl)}">${yen(pl)}</b></div></div>`}
+    const sides=['buy','sell'];if(G.set.short)sides.push('short','cover');
+    const sd=UI.side,u=G.set.unit;
+    const maxQ=maxQty(c,sd);if(UI.qty==null)UI.qty=Math.min(u,maxQ)||u;
+    const q=UI.qty,amt=q*p,fee=G.set.fee?Math.round(amt*FEE):0;
+    const pq=f=>Math.floor(maxQ*f/u)*u;
+    h+=`<div class="trade"><div class="seg">${sides.map(s=>`<button class="${sd===s?'on '+SIDE[s][1]:''}" onclick="UI.side='${s}';UI.qty=null;renderDetail()">${SIDE[s][0]}</button>`).join('')}</div>
+    <div class="qty"><button onclick="setQ(-${u*10})">-${u*10}</button><button onclick="setQ(-${u})">-${u}</button><input id="qin" class="num" inputmode="numeric" value="${q}" onchange="UI.qty=Math.max(0,Math.round((+this.value||0)/${u})*${u});renderDetail()"><button onclick="setQ(${u})">+${u}</button><button onclick="setQ(${u*10})">+${u*10}</button></div>
+    <div class="pcts">${[[.25,'25%'],[.5,'50%'],[.75,'75%'],[1,'最大']].map(([f,t])=>`<button onclick="UI.qty=${pq(f)};renderDetail()">${t}</button>`).join('')}</div>
+    <div class="row" style="font-size:12.5px"><span class="sub grow">約定金額（終値） <b style="color:var(--tx)">${yen(amt)}</b>${fee?` ＋手数料 ${yen(fee)}`:''}</span><span class="sub">最大 ${fmt(maxQ)}株</span></div>
+    <button class="go ${SIDE[sd][1]}" ${q>0&&q<=maxQ?'':'disabled'} onclick="execTrade()">${SIDE[sd][0]}注文 ・ ${fmt(q)}株</button>
+    <div class="note" style="margin-top:8px;text-align:center">${sd==='buy'?`買付余力 ${yen(buyPower())}`:sd==='short'?`信用余力 ${yen(shortRoom())}（総資産の${SHORT_LEV}倍まで・貸株料 年1.1%）`:`${sd==='sell'?'保有':'空売り'} ${fmt(pos?Math.abs(pos.q):0)}株`}</div></div>`;
+  }
+  h+=`<button class="go ghost" onclick="closeSheet()">閉じる</button>`;
+  openSheet(h,esc(nameOf(c)),esc(isIdx?(G.set.blind?'指数':'指数（売買不可）'):codeLabel(c)));
+  const up=p>=P[i0];
+  const lines=[{v:P,color:up?'#ff4d6d':'#18d18c',w:1.8,label:'終値',fill:up?'rgba(255,77,109,.18)':'rgba(24,209,140,.16)'}];
+  if(i-i0<=800){lines.push({v:sma(P,25,i0,i),color:'#ffc65c',w:1.1,label:'25日'});lines.push({v:sma(P,75,i0,i),color:'#8b7bff',w:1.1,label:'75日'})}
+  const marks=G.trades.filter(t=>t.c===c).map(t=>({i:t.i,c:t.side==='buy'||t.side==='cover'?'#ff4d6d':'#18d18c',up:t.side==='buy'||t.side==='cover'}));
+  drawChart($('dc'),{h:210,i0,i1:i,lines,marks,ref:pos?pos.cost:null,xf:dateLabel,yf:v=>isFinite(v)?(v>=100?fmt(v):v.toFixed(1)):'—'});
+}
+function maxQty(c,sd){
+  const p=px(c),u=G.set.unit,pos=G.pos[c],f=G.set.fee?1+FEE:1;
+  if(sd==='buy')return pos&&pos.q<0?0:Math.floor(buyPower()/(p*f)/u)*u;
+  if(sd==='sell')return pos&&pos.q>0?pos.q:0;
+  if(sd==='short')return pos&&pos.q>0?0:Math.floor(shortRoom()/p/u)*u;
+  if(sd==='cover')return pos&&pos.q<0?-pos.q:0;
+  return 0;
+}
+function setQ(d){UI.qty=Math.max(0,(UI.qty||0)+d);renderDetail()}
+function execTrade(){
+  const c=UI.detail,err=doTrade(c,UI.side,UI.qty);
+  if(err){toast('⚠️ '+err);return}
+  toast(`✅ ${esc(nameOf(c))} ${fmt(UI.qty)}株 ${SIDE[UI.side][0]}（@${pxf(px(c))}）`);
+  UI.qty=null;if(!G.pos[c]&&(UI.side==='sell'||UI.side==='cover'))UI.side='buy';
+  renderDetail();renderHdr();renderMain();
+}
+
+// ---------- スクリーニング ----------
+const SCR=[ // key, ラベル, 方向(min/max), 単位, 選択肢
+ ['pbr','PBR','max','倍',[0.5,0.8,1,1.5,3]],
+ ['eqr','自己資本比率','min','%',[30,40,50,60,70]],
+ ['per','PER','max','倍',[8,10,15,20,30]],
+ ['yld','配当利回り','min','%',[2,3,3.5,4,5]],
+ ['roe','ROE','min','%',[5,8,10,15,20]],
+ ['mc','時価総額','min','億円',[100,500,1000,5000,10000]]];
+const SCR_PRESET=[['💎 割安株',{pbr:1,per:15}],['💰 高配当',{yld:3.5}],['🛡 財務健全',{eqr:60}],['🚀 高収益',{roe:15}],['🏦 大型株',{mc:10000}]];
+const SCR_SORT={pbr:['pbr',1],eqr:['eqr',-1],per:['per',1],roe:['roe',-1],mc:['mc',-1]};
+function metric(c,k){if(k==='yld')return yld(c)*100;const p=PROF&&PROF.p[c];if(!p)return null;const v=p[k];if(v==null)return null;
+  if(k==='eqr'||k==='roe')return v*100;if(k==='mc')return v/1e8;return v}
+function metricLabel(c,k){const v=metric(c,k);if(v==null)return '—';const d=SCR.find(x=>x[0]===k);
+  if(k==='mc')return v>=1e4?(v/1e4).toFixed(1)+'兆円':fmt(v)+'億円';return (k==='pbr'?v.toFixed(2):v.toFixed(1))+d[3]}
+function scrActive(){return UI.scr&&Object.keys(UI.scr).length>0}
+function scrMini(c){return Object.keys(UI.scr).map(k=>`${SCR.find(x=>x[0]===k)[1]} ${metricLabel(c,k)}`).join(' / ')}
+function applyScr(codes){
+  if(!scrActive())return codes;
+  if(!PROF){loadProfile();return Object.keys(UI.scr).every(k=>k==='yld')?codes.filter(c=>yld(c)*100>=UI.scr.yld):[]}
+  return codes.filter(c=>Object.entries(UI.scr).every(([k,lim])=>{const v=metric(c,k);if(v==null)return false;if(k==='per'&&v<=0)return false;return SCR.find(x=>x[0]===k)[2]==='max'?v<=lim:v>=lim}));
+}
+function scrBar(){
+  loadProfile();
+  const on=scrActive();
+  return `<div class="scrbar"><button class="${on?'on':''}" onclick="scrSheet()">🔍 条件で絞り込み${on?` ・ ${Object.keys(UI.scr).length}`:''}</button>${on?Object.entries(UI.scr).map(([k,v])=>{const d=SCR.find(x=>x[0]===k);return `<span class="tag">${d[1]} ${d[2]==='max'?'≦':'≧'}${fmt(v,v%1?1:0)}${d[3]}<i onclick="delete UI.scr['${k}'];UI.limit=40;renderMain()">✕</i></span>`}).join('')+`<button class="clr" onclick="UI.scr={};renderMain()">クリア</button>`:''}</div>`;
+}
+function scrSheet(){
+  loadProfile();UI.scr=UI.scr||{};const T=Object.assign({},UI.scr);
+  const body=()=>`<p class="sub" style="font-size:12.5px;margin:0 0 8px;line-height:1.6">条件をタップで選択（もう一度タップで解除）。${PROF?`財務指標は ${esc(PROF.at)} 時点の最新値です${G.mode!=='live'&&D.b<M.last-5?'（ゲーム内の日付時点ではありません）':''}。配当利回りはゲーム内の日付時点で計算します。`:PROF_ST===3?'財務データを読み込めないため、配当利回りのみ使えます。':'財務データを読み込み中…'}</p>
+  <div class="sec-t" style="margin-top:6px">プリセット</div><div class="presets">${SCR_PRESET.map(([n,c],i)=>`<button onclick="scrPreset(${i})">${n}</button>`).join('')}</div>
+  ${SCR.map(([k,lab,dir,u,opts])=>`<div class="opt"><span>${lab}<small class="sub" style="display:block;font-size:11px">${dir==='max'?'以下':'以上'}</small></span><div class="seg" data-sk="${k}">${opts.map(v=>`<button class="${T[k]===v?'on':''}" data-v="${v}">${k==='mc'?(v>=1e4?v/1e4+'兆':v>=1000?v/1000+'千億':v+'億'):fmt(v,v%1?1:0)+u}</button>`).join('')}</div></div>`).join('')}
+  <div class="row" style="gap:8px;margin-top:6px"><button class="go ghost" style="flex:1" id="scrClr">リセット</button><button class="go pri" style="flex:2" id="scrGo">${scrCount(T)}銘柄を表示</button></div>`;
+  const draw=()=>{openSheet(body(),'スクリーニング');
+    $('sheetIn').querySelectorAll('.seg[data-sk]').forEach(sg=>sg.onclick=e=>{const b=e.target.closest('button');if(!b)return;const k=sg.dataset.sk,v=+b.dataset.v;if(T[k]===v)delete T[k];else T[k]=v;draw()});
+    $('scrClr').onclick=()=>{for(const k in T)delete T[k];draw()};
+    $('scrGo').onclick=()=>{UI.scr=Object.assign({},T);UI.limit=40;UI.scope='all';closeSheet();renderMain()};};
+  window.scrPreset=i=>{for(const k in T)delete T[k];Object.assign(T,SCR_PRESET[i][1]);draw()};
+  draw();
+  if(!PROF&&PROF_ST===1){const w=setInterval(()=>{if(PROF_ST!==1){clearInterval(w);if(!$('sheet').classList.contains('hide')&&$('scrGo'))draw()}},300)}
+}
+function scrCount(T){const keep=UI.scr;UI.scr=T;const n=applyScr(D.codes.filter(c=>listed(c))).length;UI.scr=keep;return n}
+
+// ---------- 企業情報 ----------
+let PROF=null,PROF_ST=0;
+function loadProfile(){
+  if(PROF_ST)return;PROF_ST=1;
+  if(location.protocol==='file:'||M.v!==2){PROF_ST=3;return}
+  fetch('profile.json').then(r=>r.ok?r.json():null).then(j=>{PROF=j;PROF_ST=j?2:3;if(UI.detail&&UI.detail!=='N225')renderDetail();else if(G&&UI.tab==='mkt'&&!$('game').classList.contains('hide'))renderMain()}).catch(()=>{PROF_ST=3})
+}
+function coCard(c){
+  if(G.set.blind)return `<div class="card co"><b>企業情報</b><p class="sub" style="font-size:12.5px;margin:6px 0 0">ブラインド中は企業情報を表示しません。</p></div>`;
+  loadProfile();
+  if(PROF_ST===1)return `<div class="card co"><b>企業情報</b><p class="sub" style="font-size:12.5px;margin:6px 0 0">読み込み中…</p></div>`;
+  const p=(PROF&&PROF.p[c])||{};const mt=M.meta[c];
+  const f1=v=>v==null?'—':v.toFixed(1);
+  const rows=[['設立',p.est||'—'],['本社',p.hq||'—'],['従業員',p.emp?fmt(p.emp)+'人':'—'],['時価総額',p.mc?yen(p.mc):'—'],['売上高',p.rev?yen(p.rev):'—'],['自己資本比率',p.eqr!=null?(p.eqr*100).toFixed(1)+'%':'—'],['配当利回り',(yld(c)*100).toFixed(2)+'%'],
+    ['PER',p.per!=null&&p.per>0?f1(p.per)+'倍':'—'],['PBR',p.pbr!=null?p.pbr.toFixed(2)+'倍':'—'],['ROE',p.roe!=null?(p.roe*100).toFixed(1)+'%':'—'],['営業利益率',p.opm!=null?(p.opm*100).toFixed(1)+'%':'—']];
+  const past=G.mode!=='live'&&D.b<M.last-5;
+  return `<div class="card co"><div class="row"><b>企業情報</b><span class="sub" style="margin-left:auto;font-size:11px">${PROF?esc(PROF.at)+' 時点':''}</span></div>
+  ${p.d?`<p class="desc">${esc(p.d)}</p>`:`<p class="sub" style="font-size:12.5px">概要データがありません。</p>`}
+  <div class="kv num">${rows.map(([k,v])=>`<div><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div>
+  ${past?'<p class="note" style="margin:8px 0 0">※ 指標は最新の値で、ゲーム内の日付時点のものではありません。</p>':''}
+  <p class="note" style="margin:6px 0 0">概要：${p.wt?`<a href="https://ja.wikipedia.org/wiki/${encodeURIComponent(p.wt)}" target="_blank" rel="noopener">Wikipedia「${esc(p.wt)}」</a>（CC BY-SA）`:'Wikipedia'} ・ 指標：Yahoo Finance${p.web?` ・ <a href="${esc(p.web)}" target="_blank" rel="noopener">公式サイト</a>`:''}</p></div>`;
+}
+
+// ---------- 時間を進める ----------
+function adv(n){
+  let ev=null,msg=null;
+  for(let k=0;k<n;k++){const r=stepDay();if(!r)break;if(r.ev)ev=r.ev;if(r.msg)msg=r.msg;if(UI.play&&((r.ev&&r.ev.big)||r.msg))break}
+  saveGame();
+  if(msg){toast(msg,4500);stopPlay()}
+  else if(ev){toast('📰 '+esc(ev.t),ev.big?4500:2600);if(ev.big&&UI.play)stopPlay()}
+  if(G.day>=G.end)stopPlay();
+  refresh();
+}
+function refresh(){renderHdr();renderCtl();if(UI.tab==='mkt'&&$('mlist')){$('idxCard').innerHTML=idxInner();idxSpark();renderList()}else renderMain();if(UI.detail)renderDetail()}
+function togglePlay(){if(UI.play)stopPlay();else{UI.play=1;UI.timer=setInterval(()=>adv(1),UI.speed||350);renderCtl()}}
+function stopPlay(){UI.play=0;clearInterval(UI.timer);if(G&&G.mode!=='pvp'&&$('ctl')&&!$('game').classList.contains('hide'))renderCtl()}
+function menuSheet(){
+  const live=G.mode==='live',pvp=G.mode==='pvp';
+  if(!pvp)stopPlay();
+  let h='';
+  if(!live&&!pvp)h+=`<div class="opt"><span>自動再生の速さ</span><div class="seg" id="spd">${[[700,'ゆっくり'],[350,'普通'],[120,'速い'],[30,'爆速']].map(([v,t])=>`<button class="${(UI.speed||350)===v?'on':''}" data-v="${v}">${t}</button>`).join('')}</div></div>`;
+  if(pvp)h+=`<div class="card" style="margin-top:6px"><div class="sub" style="font-size:12px">ルーム</div><b class="num" style="font-size:22px;letter-spacing:.12em">${NET.code}</b></div>`;
+  h+=`<button class="go ghost" onclick="closeSheet();showHelp()">遊び方</button>`;
+  if(live)h+=`<button class="go ghost" onclick="if(confirm('リアル口座を解約して最初からやり直しますか？')){LS.del('kabu_live');closeSheet();renderMenu()}">口座をリセット</button>`;
+  else if(pvp)h+=`<button class="go ghost" onclick="if(confirm('対戦から退出しますか？')){closeSheet();leaveRoom();renderMenu()}">対戦から退出</button>`;
+  else h+=`<button class="go ghost" onclick="if(confirm('ここで終了して結果を見ますか？')){closeSheet();finish()}">ここで終了して結果を見る</button>`;
+  if(!pvp)h+=`<button class="go ghost" onclick="closeSheet();saveGame();renderMenu()">メニューに戻る${live?'':'（自動保存）'}</button>`;
+  openSheet(h,'メニュー');
+  const sp=$('spd');if(sp)sp.onclick=e=>{const b=e.target.closest('button');if(!b)return;UI.speed=+b.dataset.v;sp.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b))};
+}
+
+// ---------- 結果 ----------
+function stats(){
+  const eq=equity(),ret=eq/G.init-1,b=bench(),ex=ret-b;
+  let pk=0,mdd=0;for(const [,v] of G.hist){if(v>pk)pk=v;mdd=Math.max(mdd,1-v/pk)}
+  const rank=ex>=0.5?'SS':ex>=0.25?'S':ex>=0.1?'A':ex>=0?'B':ex>=-0.1?'C':'D';
+  return {eq,ret,b,ex,mdd,rank};
+}
+const RANK_C={SS:'#ff6bf0',S:'#ffc65c',A:'#ff4d6d',B:'#4cc3ff',C:'#8a93a6',D:'#5b6476'};
+const RANK_T={SS:'伝説の相場師',S:'兜町の勝負師',A:'市場に勝った投資家',B:'インデックス並み',C:'もう一歩',D:'修行が必要'};
+function resultChart(id){const {H,eq,b}=pfLines();drawChart($(id),{h:170,i0:0,i1:Math.max(1,H.length-1),lines:[{v:b,color:'#ffc65c',w:1.3,label:'日経'},{v:eq,color:'#8b7bff',w:2.2,label:'資産',fill:'rgba(139,123,255,.25)'}],ref:0,dotEnd:1,xf:k=>H[Math.min(k,H.length-1)]?D.dates[H[Math.min(k,H.length-1)][0]]:'',yf:v=>(v>0?'+':'')+v.toFixed(0)+'%'})}
+function statsCard(s){return `<div class="card kv num"><div><span>日経平均</span><b class="${cls(s.b)}">${pct(s.b,1)}</b></div><div><span>超過リターン</span><b class="${cls(s.ex)}">${pct(s.ex,1)}</b></div>
+  <div><span>最大下落率</span><b>${pct(-s.mdd,1)}</b></div><div><span>取引回数</span><b>${G.trades.length}回</b></div>
+  <div><span>受取配当</span><b>${yen(G.divs)}</b></div><div><span>手数料等</span><b>${yen(G.fees)}</b></div></div>`}
+function revealCard(){
+  if(!G.set.blind)return '';const per={};for(const t of G.trades)per[t.c]=1;for(const c in G.pos)per[c]=1;
+  return `<div class="card"><b>ブラインドの答え合わせ</b><p class="sub" style="font-size:12.5px;margin:4px 0 6px">期間：${D.dates[G.start]} 〜 ${D.dates[G.day]}</p>${Object.keys(per).map(c=>`<div class="sub" style="font-size:13px;padding:2px 0">銘柄${G.alias[c]} ＝ <b style="color:var(--tx)">${M.meta[c].n}</b>（${c}）</div>`).join('')||'<span class="sub">取引なし</span>'}</div>`;
+}
+function finish(){
+  stopPlay();const s=stats();
+  if(!G.done){
+    G.done=1;saveGame();
+    const rec=LS.get('kabu_rec',{});const r=rec[G.scn];if(!r||s.ret>r.ret)rec[G.scn]={ret:s.ret,ex:s.ex,rank:s.rank,date:new Date().toISOString().slice(0,10)};LS.set('kabu_rec',rec);
+    addHist({scn:G.scnName,ret:s.ret,b:s.b,rank:s.rank});
+  }
+  openSheet(`<div class="rank" style="color:${RANK_C[s.rank]};text-shadow:0 0 40px ${RANK_C[s.rank]}55">${s.rank}</div><div style="text-align:center;font-weight:700">${RANK_T[s.rank]}</div>
+  <div class="big-n num ${cls(s.ret)}">${pct(s.ret,1)}</div><div class="sub" style="text-align:center">${yen(G.init)} → <b style="color:var(--tx)">${yen(s.eq)}</b></div>
+  <div class="card" style="margin-top:14px"><div class="legend"><span><i style="background:#8b7bff"></i>あなた</span><span><i style="background:#ffc65c"></i>日経平均</span></div><canvas id="rc"></canvas></div>
+  ${statsCard(s)}${revealCard()}
+  <button class="go pri" onclick="shareRes()">結果をコピー</button>
+  <button class="go ghost" onclick="closeSheet();renderMenu()">メニューへ</button>`,`🏁 ${esc(G.scnName)} 終了`);
+  resultChart('rc');
+}
+function addHist(o){const hs=LS.get('kabu_hist',[]);hs.unshift(Object.assign({from:D.dates[G.start],to:D.dates[G.day],blind:G.set.blind,at:new Date().toISOString().slice(0,10)},o));LS.set('kabu_hist',hs.slice(0,30))}
+function shareRes(extra){const s=stats();const t=`兜町トレーダー「${G.scnName}」${D.dates[G.start]}〜${D.dates[G.day]}\n${extra||'ランク'+s.rank} 運用成績 ${pct(s.ret,1)}（日経平均 ${pct(s.b,1)}）\n${location.href.split('?')[0]}`;
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('コピーしました')).catch(()=>prompt('コピーしてください',t))}
+function showRecords(){
+  const hs=LS.get('kabu_hist',[]),rec=LS.get('kabu_rec',{});
+  openSheet(`<div class="sec-t" style="margin-top:6px">シナリオ別ベスト</div>${SCN.map(s=>{const r=rec[s.id];return `<div class="opt"><span>${s.name}</span><b class="num">${r?`<span style="color:${RANK_C[r.rank]}">${r.rank}</span> <span class="${cls(r.ret)}">${pct(r.ret,1)}</span>`:'<span class="sub">—</span>'}</b></div>`}).join('')}
+  <div class="sec-t">最近のプレイ</div>${hs.length?`<table class="tr num">${hs.map(h=>`<tr><td>${esc(h.scn)}${h.blind?' 🙈':''}<br><span class="sub">${h.from}〜${h.to}</span></td><td style="color:${RANK_C[h.rank]||'var(--tx)'}">${esc(h.rank)}</td><td class="${cls(h.ret)}" style="text-align:right">${pct(h.ret,1)}<br><span class="sub">日経 ${pct(h.b,1)}</span></td></tr>`).join('')}</table>`:'<p class="sub">まだ記録がありません</p>'}`,'成績');
+}
+function showHelp(){
+  openSheet(`<div class="help">
+  <p>📈 <b>本物の株価</b>：${M.v===2?'東証プライム市場の全'+M.codes.length+'銘柄':'東証の代表的な'+M.codes.length+'銘柄'}と日経平均株価の、2000年1月から${M.dates[M.last]}までの実際の終値（株式分割を調整済み）を使っています。</p>
+  <p>⏳ <b>過去の相場に挑戦</b>：シナリオを選ぶと、その開始日に戻ります。見えるのはその日までの値動きだけ。「+1日」「+1週」「+1月」や自動再生で時間を進め、期間終了時の資産で採点します。</p>
+  <p>⚔️ <b>オンライン対戦</b>：ルームを作って6桁の番号か招待リンクを友だちに送ります。全員が同じ相場・同じ初期資金でスタートし、時間はホストの操作で全員同時に進みます。終了時の総資産で順位が決まります。</p>
+  <p>💴 <b>売買</b>：その日の終値で約定します。初期設定は100株単位・手数料0.1%。実際の配当も権利落ち日に受け取れます。</p>
+  <p>🔻 <b>空売り</b>：値下がりで利益を出す信用売り。総資産の2倍まで建てられ、貸株料（年1.1%）がかかります。保証金率が30%を切ると強制決済されます。</p>
+  <p>🏆 <b>ランク</b>：日経平均に対する超過リターンで決まります（SS: +50pt以上、S: +25pt、A: +10pt、B: 0pt以上、C: -10pt以上、D）。</p>
+  <p>📡 <b>リアル口座</b>：最新の終値から運用を始め、新しい営業日のデータが届くたびに資産が本物の相場と一緒に動きます。</p>
+  <p>🙈 <b>ブラインド</b>：銘柄名・日付・ニュースを隠します。結末を知っている相場でも、純粋に値動きだけで勝負できます。</p>
+  <p class="note">ゲーム内の取引は仮想のもので、投資助言ではありません。株価データは Yahoo Finance から取得した日次終値です。</p></div>`,'遊び方');
+}
+
+// ---------- オンライン対戦（PeerJS） ----------
+const NET={peer:null,host:false,conns:{},conn:null,code:null,myId:null,players:{},cfg:null,started:false,paused:true,speed:1000,board:[],timer:null,ended:false,lost:false};
+const ROOM_PREFIX='kabusim-room-';
+function loadPeer(){return new Promise((res,rej)=>{if(window.Peer)return res();const add=(src,next)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=next;document.head.appendChild(s)};add('https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js',()=>add('https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js',()=>rej(new Error('PeerJSを読み込めませんでした'))))})}
+function myName(){return LS.get('kabu_name','')||('プレイヤー'+Math.floor(Math.random()*900+100))}
+const PVP_SCN=[{id:'rnd',name:'ランダム期間',random:245},{id:'recent',name:'直近1年',rel:245},...SCN.filter(s=>s.from)];
+function onlineSheet(code){
+  const nm=myName();
+  openSheet(`<p class="sub" style="font-size:13px;line-height:1.65;margin-top:0">全員が同じ相場・同じ資金でスタートし、時間はホストの操作で同時に進みます。期間終了時の総資産で順位を競います。</p>
+  <div class="opt"><span>あなたの名前</span><input id="nmIn" maxlength="12" value="${esc(nm)}" style="width:55%"></div>
+  <button class="go pri" style="margin-top:16px" onclick="createRoom()">ルームを作る</button>
+  <div class="sec-t" style="text-align:center">または番号で参加</div>
+  <div class="row"><input id="codeIn" class="num grow" inputmode="numeric" maxlength="6" placeholder="6桁のルーム番号" value="${code||''}" style="font-size:20px;text-align:center;letter-spacing:.2em;font-weight:800"><button style="padding:12px 18px;font-weight:700" onclick="joinRoom()">参加</button></div>
+  <p class="note" style="margin-top:14px">通信はブラウザ同士の直接接続（WebRTC / PeerJS）です。うまくつながらない場合は、別のネットワーク（モバイル回線など）でお試しください。</p>`,'⚔️ オンライン対戦');
+}
+function saveName(){const v=($('nmIn')?$('nmIn').value:'').trim().slice(0,12)||myName();LS.set('kabu_name',v);return v}
+function resetNet(){try{NET.peer&&NET.peer.destroy()}catch(e){}clearInterval(NET.timer);Object.assign(NET,{peer:null,host:false,conns:{},conn:null,code:null,myId:null,players:{},cfg:null,started:false,paused:true,speed:1000,board:[],timer:null,ended:false,lost:false})}
+function leaveRoom(){
+  if(NET.host)broadcast({t:'bye'});else if(NET.conn)try{NET.conn.send({t:'leave'})}catch(e){}
+  setTimeout(resetNet,200);if(G&&G.mode==='pvp')G=null;
+}
+async function createRoom(){
+  const name=saveName();
+  try{await loadPeer()}catch(e){toast('⚠️ '+e.message);return}
+  resetNet();NET.host=true;NET.lobby={scn:'rnd',len:245,blind:1,short:1,speed:1000,cap:10000000,unit:100};
+  const tryOpen=(n)=>{
+    const code=String(Math.floor(100000+Math.random()*900000));
+    const peer=new Peer(ROOM_PREFIX+code);NET.peer=peer;
+    peer.on('open',id=>{NET.code=code;NET.myId=id;NET.players[id]={id,name,eq:0,on:true};renderLobby()});
+    peer.on('error',err=>{if(err.type==='unavailable-id'&&n<4){peer.destroy();tryOpen(n+1)}else{toast('⚠️ 接続エラー：'+err.type)}});
+    peer.on('connection',c=>{
+      c.on('data',d=>hostRecv(c,d));
+      c.on('close',()=>{const p=NET.players[c.peer];if(p){p.on=false;if(!NET.started)delete NET.players[c.peer];delete NET.conns[c.peer];hostLobbyUpdate();if(NET.started)toast(`${esc(p.name)} が退出しました`)}});
+    });
+    peer.on('disconnected',()=>{try{peer.reconnect()}catch(e){}});
+  };
+  tryOpen(0);
+  openSheet(`<p class="sub" style="text-align:center;padding:30px 0">ルームを準備しています…</p>`,'ルーム作成');
+}
+async function joinRoom(){
+  const name=saveName();const code=($('codeIn').value||'').replace(/\D/g,'');
+  if(code.length!==6){toast('6桁のルーム番号を入力してください');return}
+  try{await loadPeer()}catch(e){toast('⚠️ '+e.message);return}
+  resetNet();NET.code=code;
+  const peer=new Peer();NET.peer=peer;
+  openSheet(`<p class="sub" style="text-align:center;padding:30px 0">ルーム ${code} に接続しています…</p>`,'参加');
+  peer.on('open',id=>{
+    NET.myId=id;const c=peer.connect(ROOM_PREFIX+code,{reliable:true});NET.conn=c;
+    const to=setTimeout(()=>{if(!NET.cfg&&!NET.joined){toast('⚠️ ルームが見つかりません');}},9000);
+    c.on('open',()=>{c.send({t:'hello',name})});
+    c.on('data',d=>{clearTimeout(to);clientRecv(d)});
+    c.on('close',()=>{if(NET.ended||!NET.peer)return;NET.lost=true;toast('⚠️ ホストとの接続が切れました',4000);if(G&&G.mode==='pvp')renderCtl();else{closeSheet()}});
+  });
+  peer.on('error',err=>{toast(err.type==='peer-unavailable'?'⚠️ ルームが見つかりません':'⚠️ 接続エラー：'+err.type)});
+}
+function broadcast(m){for(const id in NET.conns){try{NET.conns[id].send(m)}catch(e){}}}
+function lobbyCfgView(){const L=NET.lobby,sc=PVP_SCN.find(s=>s.id===L.scn);return {scnName:sc.name,len:sc.random?L.len:null,blind:L.blind,short:L.short,speed:L.speed}}
+function hostLobbyUpdate(){
+  const players=Object.values(NET.players).filter(p=>p.on).map(p=>({id:p.id,name:p.name}));
+  if(!NET.started)broadcast({t:'lobby',players,cfg:lobbyCfgView(),code:NET.code});
+  if(!NET.started&&$('lobbyHost'))renderLobby();
+}
+function hostRecv(c,d){
+  if(d.t==='hello'){
+    if(NET.started){c.send({t:'reject',msg:'対戦はすでに始まっています'});setTimeout(()=>c.close(),500);return}
+    if(Object.keys(NET.conns).length>=7){c.send({t:'reject',msg:'ルームが満員です（最大8人）'});return}
+    NET.conns[c.peer]=c;NET.players[c.peer]={id:c.peer,name:String(d.name||'ゲスト').slice(0,12),eq:0,on:true};
+    hostLobbyUpdate();toast(`👋 ${esc(NET.players[c.peer].name)} が参加しました`);
+  }else if(d.t==='eq'){const p=NET.players[c.peer];if(p){p.eq=+d.eq||0;p.day=d.d}}
+  else if(d.t==='leave'){const p=NET.players[c.peer];if(p){p.on=false;if(!NET.started)delete NET.players[c.peer]}hostLobbyUpdate()}
+}
+function renderLobby(){
+  const L=NET.lobby,players=Object.values(NET.players).filter(p=>p.on);
+  const sc=PVP_SCN.find(s=>s.id===L.scn);
+  const link=location.href.split('?')[0].split('#')[0]+'?room='+NET.code;
+  let h=`<div id="lobbyHost"></div><div class="card" style="text-align:center"><div class="sub" style="font-size:12px">ルーム番号</div><div class="code num">${NET.code}</div>
+  <button style="font-size:13px" onclick="copyText('${link}')">🔗 招待リンクをコピー</button></div>
+  <div class="sec-t">参加者 ${players.length}/8</div><div class="card" style="padding:6px 10px">${players.map(p=>`<div class="pl ${p.id===NET.myId?'me':''}"><span class="dot"></span><b class="grow">${esc(p.name)}</b>${p.id===NET.myId?'<span class="badge">ホスト</span>':''}</div>`).join('')}</div>
+  <div class="sec-t">ルール</div>
+  <div class="opt"><span>相場</span><select id="pScn" style="max-width:62%">${PVP_SCN.map(s=>`<option value="${s.id}" ${s.id===L.scn?'selected':''}>${s.name}</option>`).join('')}</select></div>
+  ${sc.random?segOpt(L,'len','期間',[[63,'3ヶ月'],[125,'半年'],[245,'1年']]):''}
+  ${segOpt(L,'speed','進む速さ',[[2000,'2秒/日'],[1000,'1秒/日'],[500,'0.5秒'],[250,'0.25秒']])}
+  ${segOpt(L,'blind','ブラインド',[[1,'オン'],[0,'オフ']])}
+  ${segOpt(L,'short','空売り',[[1,'あり'],[0,'なし']])}
+  <p class="note">初期資金1,000万円・100株単位・手数料0.1%。ランダム期間＋ブラインドなら、結末を知っている人がいても公平に戦えます。</p>
+  <button class="go pri" onclick="hostStart()" ${players.length<2?'':''}>${players.length<2?'ひとりで開始（参加を待たずに）':'対戦開始！'}</button>`;
+  UI.onClose=null;
+  openSheet(h,'ルーム（ホスト）');
+  UI.onClose=()=>{if(!NET.started){leaveRoom();toast('ルームを閉じました')}};
+  bindSegs(L,$('sheetIn'),()=>hostLobbyUpdate());
+  $('pScn').onchange=e=>{L.scn=e.target.value;hostLobbyUpdate();renderLobby()};
+}
+function copyText(t){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('コピーしました')).catch(()=>prompt('コピーしてください',t))}
+function renderClientLobby(players,cfg){
+  const h=`<div class="card" style="text-align:center"><div class="sub" style="font-size:12px">ルーム番号</div><div class="code num">${NET.code}</div><div class="sub" style="font-size:13px">ホストの開始を待っています…</div></div>
+  <div class="sec-t">参加者 ${players.length}/8</div><div class="card" style="padding:6px 10px">${players.map((p,k)=>`<div class="pl ${p.id===NET.myId?'me':''}"><span class="dot"></span><b class="grow">${esc(p.name)}</b>${k===0?'<span class="badge">ホスト</span>':''}${p.id===NET.myId?'<span class="badge s">あなた</span>':''}</div>`).join('')}</div>
+  <div class="sec-t">ルール</div><div class="card kv"><div><span>相場</span><b>${esc(cfg.scnName)}</b></div><div><span>期間</span><b>${cfg.len?Math.round(cfg.len/21)+'ヶ月':'シナリオ通り'}</b></div><div><span>ブラインド</span><b>${cfg.blind?'オン':'オフ'}</b></div><div><span>空売り</span><b>${cfg.short?'あり':'なし'}</b></div><div><span>速さ</span><b>${cfg.speed/1000}秒/日</b></div><div><span>初期資金</span><b>1,000万円</b></div></div>`;
+  UI.onClose=null;openSheet(h,'ルーム');UI.onClose=()=>{if(!NET.started&&NET.peer){leaveRoom();toast('ルームから退出しました')}};
+}
+function hostStart(){
+  const L=NET.lobby,sc=PVP_SCN.find(s=>s.id===L.scn);
+  const set={cap:L.cap,fee:1,unit:L.unit,short:L.short,blind:L.blind,len:L.len};
+  const [s,e]=scnRange(sc,set);
+  const cfg={name:L.blind?'オンライン対戦':`対戦：${sc.name}`,startDate:M.dates[s],endDate:M.dates[e],set,seed:newSeed()};
+  NET.started=true;NET.speed=L.speed;NET.cfg=cfg;
+  broadcast({t:'start',cfg,speed:L.speed});
+  NET.paused=true;
+  pvpBegin(cfg).then(()=>{if(G)renderCtl()});
+  let n=3;toast(`⏳ ${n}`,900);const cd=setInterval(()=>{n--;if(n>0)toast(`⏳ ${n}`,900);else{clearInterval(cd);toast('🔔 取引開始！',1200);hostSetPause(false)}},1000);
+}
+async function pvpBegin(cfg){
+  UI.onClose=null;closeSheet();stopPlay();G=null;
+  const gs=gIdx(cfg.startDate),ge=gIdx(cfg.endDate);
+  if(!await useWindow(gs-LOOKBACK,ge)){return}
+  const s=gs-D.a,e=Math.min(D.last,ge-D.a);
+  G=blankGame('pvp','pvp',cfg.name,s,e,cfg.set,makeAlias(cfg.seed));
+  for(const id in NET.players)NET.players[id].eq=G.init;
+  NET.board=Object.values(NET.players).map(p=>({id:p.id,name:p.name,eq:G.init,on:true}));
+  startGame();
+  if(NET.pendingDay)clientRecv(NET.pendingDay);
+}
+function hostSetPause(v){
+  NET.paused=v;clearInterval(NET.timer);
+  if(!v)NET.timer=setInterval(hostTick,NET.speed);
+  broadcast({t:'pause',v,speed:NET.speed});renderCtl();
+}
+function hostTogglePause(){hostSetPause(!NET.paused)}
+function hostSpeed(){const L=[2000,1000,500,250];NET.speed=L[(L.indexOf(NET.speed)+1)%L.length];hostSetPause(NET.paused)}
+function hostBoard(){NET.players[NET.myId].eq=equity();return Object.values(NET.players).map(p=>({id:p.id,name:p.name,eq:p.eq,on:p.on}))}
+function hostTick(){
+  if(!G)return;
+  if(G.day>=G.end){clearInterval(NET.timer);NET.paused=true;setTimeout(hostEnd,1500);return}
+  pvpStep();
+  NET.board=hostBoard();
+  broadcast({t:'day',d:D.dates[G.day],board:NET.board});
+  refresh();
+}
+function hostEnd(){NET.board=hostBoard();NET.ended=true;broadcast({t:'end',board:NET.board});refresh();showPvpResult()}
+function pvpStep(){const r=stepDay();if(r){if(r.msg)toast(r.msg,4000);else if(r.ev)toast('📰 '+esc(r.ev.t),r.ev.big?4000:2400)}}
+function netReportEq(){
+  if(NET.host){if(NET.players[NET.myId])NET.players[NET.myId].eq=equity();return}
+  if(NET.conn&&NET.conn.open)try{NET.conn.send({t:'eq',eq:equity(),d:D.dates[G.day]})}catch(e){}
+}
+function clientRecv(d){
+  if(d.t==='lobby'){NET.joined=true;NET.code=d.code||NET.code;if(!NET.started)renderClientLobby(d.players,d.cfg)}
+  else if(d.t==='reject'){toast('⚠️ '+esc(d.msg),4000);resetNet();closeSheet()}
+  else if(d.t==='start'){NET.started=true;NET.cfg=d.cfg;NET.speed=d.speed;NET.paused=true;NET.players={};pvpBegin(d.cfg);toast('⚔️ 対戦開始！まもなく時間が進みます',2500)}
+  else if(d.t==='pause'){NET.paused=d.v;NET.speed=d.speed;if(G&&G.mode==='pvp')renderCtl()}
+  else if(d.t==='day'){
+    if(!G||G.mode!=='pvp'){NET.pendingDay=d;return}
+    NET.pendingDay=null;
+    const target=Math.min(G.end,idxOf(D.dates,d.d));
+    while(G.day<target)pvpStep();
+    NET.board=d.board||NET.board;netReportEq();refresh();
+  }
+  else if(d.t==='end'){if(!G||G.mode!=='pvp')return;while(G.day<G.end)stepDay();NET.board=d.board;NET.board.forEach(p=>{if(p.id===NET.myId)p.eq=equity()});NET.ended=true;refresh();showPvpResult()}
+  else if(d.t==='bye'){if(!NET.ended){NET.lost=true;toast('⚠️ ホストがルームを閉じました',4000);if(G&&G.mode==='pvp')renderCtl();else closeSheet()}}
+}
+function boardRows(){return NET.board.slice().map(p=>p.id===NET.myId?Object.assign({},p,{eq:equity()}):p).sort((a,b)=>b.eq-a.eq)}
+function rankView(){
+  const rows=boardRows();
+  return `<div class="card" style="padding:6px 10px">${rows.map((p,k)=>`<div class="pl ${p.id===NET.myId?'me':''}"><span class="rk ${k<3?'g'+(k+1):''}">${k+1}</span><div class="grow"><b>${esc(p.name)}</b>${p.id===NET.myId?' <span class="badge s">あなた</span>':''}${p.on===false?' <span class="sub" style="font-size:11px">（切断）</span>':''}<div class="sub num" style="font-size:12px">${yen(p.eq)}</div></div><b class="num ${cls(p.eq/G.init-1)}">${pct(p.eq/G.init-1)}</b></div>`).join('')}</div>
+  <p class="note" style="text-align:center">順位は毎日の終値時点の総資産で更新されます。</p>`;
+}
+function showPvpResult(){
+  const rows=boardRows(),me=rows.findIndex(p=>p.id===NET.myId)+1,s=stats();
+  if(!G.done){G.done=1;addHist({scn:`オンライン対戦（${rows.length}人中${me}位）`,ret:s.ret,b:s.b,rank:me+'位'})}
+  const medal=['🥇','🥈','🥉'][me-1]||'🏅';
+  openSheet(`<div style="text-align:center;font-size:64px;line-height:1.1;margin-top:4px">${medal}</div><div class="big-n">${rows.length}人中 ${me}位</div>
+  <div class="num ${cls(s.ret)}" style="text-align:center;font-size:20px;font-weight:800">${pct(s.ret,1)} <span class="sub" style="font-size:13px;font-weight:500">（${yen(s.eq)}）</span></div>
+  <div class="sec-t">最終順位</div>${rankView()}
+  <div class="card"><div class="legend"><span><i style="background:#8b7bff"></i>あなた</span><span><i style="background:#ffc65c"></i>日経平均</span></div><canvas id="rc"></canvas></div>
+  ${statsCard(s)}${revealCard()}
+  <button class="go pri" onclick="shareRes('${rows.length}人中${me}位')">結果をコピー</button>
+  <button class="go ghost" onclick="closeSheet();leaveRoom();renderMenu()">退出してメニューへ</button>`,'🏁 対戦終了');
+  resultChart('rc');
+}
+
+// ---------- 最新データの取得（公開版：data.json を毎営業日自動更新） ----------
+async function checkUpdate(manual){
+  if(location.protocol==='file:'||M.v!==2){if(manual)toast(`内蔵データ：${M.dates[M.last]} 終値まで（公開版では毎営業日自動更新）`);return false}
+  try{
+    const r=await fetch('manifest.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw 0;
+    const R=await r.json();
+    if(R.last>M.dates[M.last]){
+      if(G&&G.mode!=='live'&&!$('game').classList.contains('hide'))return false; // 過去シナリオ・対戦中はそのまま
+      initManifest(R);DL=await loadWindow(M.last-260,M.last);toast(`📡 最新データ（${R.last} 終値）を読み込みました`);
+      if(G&&G.mode==='live'&&!$('game').classList.contains('hide'))openLive();else renderMenu();return true}
+    if(manual)toast(`データは最新です（${M.dates[M.last]} 終値）。毎営業日の夕方に更新されます`);
+  }catch(e){if(manual)toast('最新データを取得できませんでした')}
+  return false;
+}
+let rzT;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(UI.detail)renderDetail();else if(G&&!$('game').classList.contains('hide'))renderMain();else if(!G||$('game').classList.contains('hide'))renderMenu()},150)});
+window.addEventListener('beforeunload',()=>{if(NET.peer)leaveRoom()});
+// 起動
+async function boot(){
+  let ok=false;
+  if(location.protocol!=='file:'){try{const r=await fetch('manifest.json?t='+Date.now(),{cache:'no-store'});if(r.ok){initManifest(await r.json());ok=true}}catch(e){}}
+  if(!ok){const emb=JSON.parse($('pricedata').textContent||'null');if(!emb){$('menu').innerHTML='<p class="sub" style="padding:40px;text-align:center">株価データを読み込めませんでした。通信状況を確認して再読み込みしてください。</p>';return}initLegacy(emb)}
+  loading(true,'株価データを読み込み中…');
+  try{DL=await loadWindow(M.last-260,M.last)}catch(e){loading(false);$('menu').innerHTML='<p class="sub" style="padding:40px;text-align:center">株価データを読み込めませんでした。再読み込みしてください。</p>';return}
+  D=DL;renderMenu();
+  const m=location.search.match(/room=(\d{6})/);if(m)onlineSheet(m[1]);
+}
+boot();
+window.__K={get G(){return G},get D(){return D},get M(){return M},UI,NET,adv,doTrade,newGame,SCN,finish,stats,equity,openLive,newLive};
+</script>
+</body>
+</html>
